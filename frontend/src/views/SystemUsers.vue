@@ -22,6 +22,17 @@
             </template>
           </el-table-column>
         </el-table>
+        <div class="pagination-wrapper">
+          <el-pagination
+            v-model:current-page="userQuery.page"
+            v-model:page-size="userQuery.page_size"
+            :page-sizes="[10, 20, 50, 100]"
+            :total="userTotal"
+            layout="total, sizes, prev, pager, next, jumper"
+            @size-change="loadUsers"
+            @current-change="loadUsers"
+          />
+        </div>
       </el-tab-pane>
 
       <el-tab-pane label="角色" name="roles">
@@ -72,6 +83,8 @@ import { createSystemUser, listSystemPermissions, listSystemRoles, listSystemUse
 const activeTab = ref('users')
 const dialogVisible = ref(false)
 const users = ref<any[]>([])
+const userTotal = ref(0)
+const userQuery = ref({ page: 1, page_size: 20 })
 const roles = ref<any[]>([])
 const permissions = ref<any[]>([])
 const form = reactive({ username: '', real_name: '', password: '', role_codes: [] as string[] })
@@ -81,13 +94,18 @@ function openCreate() {
   dialogVisible.value = true
 }
 
+async function loadUsers() {
+  const userData = await listSystemUsers(userQuery.value)
+  users.value = userData.items || []
+  userTotal.value = userData.total || 0
+}
+
 async function load() {
-  const [userData, roleData, permissionData] = await Promise.all([
-    listSystemUsers({ page: 1, page_size: 100 }),
+  const [_, roleData, permissionData] = await Promise.all([
+    loadUsers(),
     listSystemRoles(),
     listSystemPermissions()
   ])
-  users.value = userData.items || []
   roles.value = roleData || []
   permissions.value = permissionData || []
 }
@@ -111,5 +129,10 @@ onMounted(load)
 <style scoped>
 .tag {
   margin-right: 6px;
+}
+.pagination-wrapper {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 16px;
 }
 </style>

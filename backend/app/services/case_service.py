@@ -36,7 +36,7 @@ class CaseService:
         if order_id:
             query = query.filter(RiskCase.order_id == order_id)
         total = query.count()
-        items = query.order_by(RiskCase.created_at.desc()).offset((page - 1) * page_size).limit(page_size).all()
+        items = query.order_by(RiskCase.updated_at.desc()).offset((page - 1) * page_size).limit(page_size).all()
         return {"items": [case_to_dict(x) for x in items], "total": total, "page": page, "page_size": page_size}
 
     def detail(self, db: Session, case_id: int):

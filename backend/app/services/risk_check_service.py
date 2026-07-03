@@ -48,6 +48,7 @@ class RiskCheckService:
                         "rule_id": rule.id,
                         "rule_code": rule.rule_code,
                         "rule_name": rule.rule_name,
+                        "priority": rule.priority,
                         "hit_score": float(rule.score),
                         "hit_message": rule.description or rule.rule_name,
                     })

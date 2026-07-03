@@ -15,7 +15,7 @@ class SystemService:
         if status:
             query = query.filter(SysUser.status == status)
         total = query.count()
-        users = query.order_by(SysUser.id.asc()).offset((page - 1) * page_size).limit(page_size).all()
+        users = query.order_by(SysUser.updated_at.desc()).offset((page - 1) * page_size).limit(page_size).all()
         return {"items": [user_to_dict(user, self._role_codes(db, user.id), self._permission_codes(db, user.id)) for user in users], "total": total, "page": page, "page_size": page_size}
 
     def create_user(self, db: Session, req):

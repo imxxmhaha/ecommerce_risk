@@ -15,18 +15,37 @@
         <el-table-column prop="id" label="ID" width="80" />
         <el-table-column prop="rule_name" label="规则名称" min-width="160" />
         <el-table-column prop="rule_code" label="规则编码" min-width="180" />
-        <el-table-column prop="rule_status" label="状态" width="100" />
-        <el-table-column prop="priority" label="优先级" width="90" />
-        <el-table-column prop="score" label="分值" width="90" />
-        <el-table-column prop="hit_count" label="命中次数" width="110" />
-        <el-table-column label="操作" width="220">
+        <el-table-column label="状态" width="80">
+          <template #default="{ row }">
+            <el-tag :type="row.rule_status === 'enabled' ? 'success' : 'info'" size="small">
+              {{ row.rule_status === 'enabled' ? '启用' : '停用' }}
+            </el-tag>
+          </template>
+        </el-table-column>
+        <el-table-column prop="priority" label="优先级" width="80" />
+        <el-table-column prop="score" label="分值" width="70" />
+        <el-table-column prop="hit_count" label="命中次数" width="90" />
+        <el-table-column prop="updated_at" label="最后更新时间" width="170" />
+        <el-table-column label="操作" width="200">
           <template #default="{ row }">
             <el-button link type="primary" @click="openEdit(row)">编辑</el-button>
-            <el-button link @click="toggle(row)">{{ row.rule_status === 'enabled' ? '停用' : '启用' }}</el-button>
+            <el-button v-if="row.rule_status === 'enabled'" link type="warning" @click="toggle(row)">停用</el-button>
+            <el-button v-else link type="success" @click="toggle(row)">启用</el-button>
             <el-button link type="danger" @click="remove(row)">删除</el-button>
           </template>
         </el-table-column>
       </el-table>
+      <div class="pagination-wrapper">
+        <el-pagination
+          v-model:current-page="query.page"
+          v-model:page-size="query.page_size"
+          :page-sizes="[10, 20, 50, 100]"
+          :total="total"
+          layout="total, sizes, prev, pager, next, jumper"
+          @size-change="load"
+          @current-change="load"
+        />
+      </div>
     </div>
     <el-dialog v-model="dialogVisible" :title="editing ? '编辑规则' : '新增规则'" width="760px">
       <el-form :model="form" label-width="90px">
@@ -51,6 +70,7 @@ import { createRule, deleteRule, listRules, setRuleStatus, updateRule } from '..
 
 const loading = ref(false)
 const rows = ref<any[]>([])
+const total = ref(0)
 const query = ref({ rule_status: '', keyword: '', page: 1, page_size: 20 })
 const dialogVisible = ref(false)
 const editing = ref(false)
@@ -59,7 +79,7 @@ const form = ref<any>({})
 function defaultForm() {
   return { rule_code: '', rule_name: '', rule_status: 'enabled', priority: 100, score: 10, condition_json: { operator: '>', feature: 'order_amount', value: 1000 }, description: '' }
 }
-async function load() { loading.value = true; try { const res: any = await listRules(query.value); rows.value = res.items || [] } finally { loading.value = false } }
+async function load() { loading.value = true; try { const res: any = await listRules(query.value); rows.value = res.items || []; total.value = res.total || 0 } finally { loading.value = false } }
 function reset() { query.value.rule_status = ''; query.value.keyword = ''; load() }
 function openCreate() { editing.value = false; form.value = defaultForm(); dialogVisible.value = true }
 function openEdit(row: any) { editing.value = true; form.value = JSON.parse(JSON.stringify(row)); dialogVisible.value = true }
@@ -68,3 +88,11 @@ async function toggle(row: any) { await setRuleStatus({ id: row.id, rule_status:
 async function remove(row: any) { await ElMessageBox.confirm('确认删除该规则？'); await deleteRule({ id: row.id }); load() }
 onMounted(load)
 </script>
+
+<style scoped>
+.pagination-wrapper {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 16px;
+}
+</style>

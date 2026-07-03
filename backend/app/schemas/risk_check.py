@@ -14,6 +14,7 @@ class RiskCheckRequest(BaseModel):
 class RuleHitView(BaseModel):
     rule_code: str
     rule_name: str
+    priority: Optional[int] = None
     hit_score: float
     hit_message: Optional[str] = None
 

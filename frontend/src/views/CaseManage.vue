@@ -19,6 +19,17 @@
         <el-table-column prop="created_at" label="创建时间" />
         <el-table-column label="操作" width="120"><template #default="{ row }"><el-button link type="primary" @click="$router.push(`/cases/${row.id}`)">查看</el-button></template></el-table-column>
       </el-table>
+      <div class="pagination-wrapper">
+        <el-pagination
+          v-model:current-page="query.page"
+          v-model:page-size="query.page_size"
+          :page-sizes="[10, 20, 50, 100]"
+          :total="total"
+          layout="total, sizes, prev, pager, next, jumper"
+          @size-change="load"
+          @current-change="load"
+        />
+      </div>
     </div>
   </div>
 </template>
@@ -30,7 +41,16 @@ import { listCases } from '../api/cases'
 
 const loading = ref(false)
 const rows = ref<any[]>([])
+const total = ref(0)
 const query = ref({ case_status: '', user_id: '', order_id: '', page: 1, page_size: 20 })
-async function load() { loading.value = true; try { const res: any = await listCases(query.value); rows.value = res.items || [] } finally { loading.value = false } }
+async function load() { loading.value = true; try { const res: any = await listCases(query.value); rows.value = res.items || []; total.value = res.total || 0 } finally { loading.value = false } }
 onMounted(load)
 </script>
+
+<style scoped>
+.pagination-wrapper {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 16px;
+}
+</style>

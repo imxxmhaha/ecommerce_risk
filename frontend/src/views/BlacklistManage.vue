@@ -18,6 +18,17 @@
         <el-table-column prop="remark" label="备注" />
         <el-table-column label="操作" width="100"><template #default="{ row }"><el-button link type="danger" @click="remove(row)">删除</el-button></template></el-table-column>
       </el-table>
+      <div class="pagination-wrapper">
+        <el-pagination
+          v-model:current-page="query.page"
+          v-model:page-size="query.page_size"
+          :page-sizes="[10, 20, 50, 100]"
+          :total="total"
+          layout="total, sizes, prev, pager, next, jumper"
+          @size-change="load"
+          @current-change="load"
+        />
+      </div>
     </div>
     <el-dialog v-model="dialogVisible" title="新增黑名单" width="520px">
       <el-form :model="form" label-width="90px">
@@ -38,12 +49,21 @@ import { createBlacklist, deleteBlacklist, listBlacklists } from '../api/blackli
 const types = ['user_id', 'phone', 'address', 'device_id', 'ip', 'order_id']
 const query = ref({ blacklist_type: '', status: 'active', keyword: '', page: 1, page_size: 20 })
 const rows = ref<any[]>([])
+const total = ref(0)
 const loading = ref(false)
 const dialogVisible = ref(false)
 const form = ref({ blacklist_type: 'user_id', blacklist_value: '', remark: '' })
-async function load() { loading.value = true; try { const res: any = await listBlacklists(query.value); rows.value = res.items || [] } finally { loading.value = false } }
+async function load() { loading.value = true; try { const res: any = await listBlacklists(query.value); rows.value = res.items || []; total.value = res.total || 0 } finally { loading.value = false } }
 function openCreate() { form.value = { blacklist_type: 'user_id', blacklist_value: '', remark: '' }; dialogVisible.value = true }
 async function save() { await createBlacklist(form.value); ElMessage.success('保存成功'); dialogVisible.value = false; load() }
 async function remove(row: any) { await ElMessageBox.confirm('确认删除该黑名单？'); await deleteBlacklist({ id: row.id }); load() }
 onMounted(load)
 </script>
+
+<style scoped>
+.pagination-wrapper {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 16px;
+}
+</style>

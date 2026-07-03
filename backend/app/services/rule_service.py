@@ -38,7 +38,7 @@ class RuleService:
             like = f"%{keyword}%"
             query = query.filter((RiskRule.rule_name.like(like)) | (RiskRule.rule_code.like(like)))
         total = query.count()
-        items = query.order_by(RiskRule.priority.asc(), RiskRule.id.desc()).offset((page - 1) * page_size).limit(page_size).all()
+        items = query.order_by(RiskRule.updated_at.desc()).offset((page - 1) * page_size).limit(page_size).all()
         rule_ids = [item.id for item in items]
         hit_counts = {}
         if rule_ids:

@@ -27,7 +27,7 @@ class BlacklistService:
         if keyword:
             query = query.filter(Blacklist.blacklist_value.like(f"%{keyword}%"))
         total = query.count()
-        items = query.order_by(Blacklist.created_at.desc()).offset((page - 1) * page_size).limit(page_size).all()
+        items = query.order_by(Blacklist.updated_at.desc()).offset((page - 1) * page_size).limit(page_size).all()
         return {"items": [blacklist_to_dict(x) for x in items], "total": total, "page": page, "page_size": page_size}
 
     def create(self, db: Session, req):

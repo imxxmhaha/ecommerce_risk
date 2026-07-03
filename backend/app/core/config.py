@@ -15,6 +15,8 @@ class Settings(BaseSettings):
     db_password: str = Field("root", alias="DB_PASSWORD")
     db_name: str = Field("ecommerce_risk_control", alias="DB_NAME")
     ai_mock: bool = Field(True, alias="AI_MOCK")
+    llm_model: str = Field("qwen-plus", alias="LLM_MODEL")
+    llm_base_url: str = Field("https://dashscope.aliyuncs.com/compatible-mode/v1", alias="LLM_BASE_URL")
     llm_api_key: str = Field("", alias="LLM_API_KEY")
     auth_secret: str = Field("ecommerce-risk-control-demo-secret", alias="AUTH_SECRET")
     access_token_expire_minutes: int = Field(480, alias="ACCESS_TOKEN_EXPIRE_MINUTES")
