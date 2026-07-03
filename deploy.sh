@@ -29,22 +29,18 @@ docker compose -f "${COMPOSE_FILE}" config >/dev/null
 echo "    配置检查通过"
 
 echo ""
-echo "==> [2/3] 检查并清理已存在的服务..."
+echo "==> [2/3] 检查并清理已存在的服务（跳过 mysql）..."
 if docker compose -f "${COMPOSE_FILE}" ps --all -q | grep -q .; then
-  if [ "$REMOVE_MYSQL_VOLUME" = true ]; then
-    echo "    检测到已有服务，执行 docker compose down -v（含 mysql 数据卷）..."
-    docker compose -f "${COMPOSE_FILE}" down -v
-  else
-    echo "    检测到已有服务，执行 docker compose down（保留 mysql 数据卷）..."
-    docker compose -f "${COMPOSE_FILE}" down
-  fi
+  echo "    停止 backend 和 frontend 容器..."
+  docker compose -f "${COMPOSE_FILE}" stop backend frontend 2>/dev/null || true
+  docker compose -f "${COMPOSE_FILE}" rm -f backend frontend 2>/dev/null || true
 else
   echo "    未检测到已存在的 Compose 服务"
 fi
 
 echo ""
-echo "==> [3/3] 构建并启动 Docker 容器..."
-docker compose -f "${COMPOSE_FILE}" up -d --build
+echo "==> [3/3] 构建并启动 Docker 容器（排除 mysql）..."
+docker compose -f "${COMPOSE_FILE}" up -d --build backend frontend
 
 echo ""
 echo "=========================================="
