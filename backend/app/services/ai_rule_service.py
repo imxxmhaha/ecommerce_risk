@@ -273,6 +273,27 @@ class AiRuleService:
         result = self._extract_json(response)
         return result or self._explain_case_mock(req.assessment, req.rule_hits, req.feature_snapshot)
 
+    def analyze_dashboard(self, req):
+        if self.settings.ai_mock:
+            return self._analyze_dashboard_mock(req.dashboard_data, req.start_date, req.end_date)
+
+        system_prompt = """你是电商风控运营分析助手。请根据运营看板数据解释风险趋势、主要风险来源和运营建议。
+严格返回 JSON:
+{
+  "summary": "一句话趋势摘要",
+  "insights": ["洞察1", "洞察2", "洞察3"],
+  "suggestions": ["建议1", "建议2"],
+  "risk_focus": ["重点关注项1", "重点关注项2"]
+}"""
+        user_prompt = json.dumps({
+            "start_date": req.start_date,
+            "end_date": req.end_date,
+            "dashboard_data": req.dashboard_data,
+        }, ensure_ascii=False, indent=2)
+        response = self._call_llm(system_prompt, user_prompt)
+        result = self._extract_json(response)
+        return result or self._analyze_dashboard_mock(req.dashboard_data, req.start_date, req.end_date)
+
     # ========== Mock 实现 ==========
 
     def _generate_rule_mock(self, req):
@@ -458,4 +479,50 @@ class AiRuleService:
             "effective_rule_explanation": effective.get("hit_message") or effective.get("rule_name"),
             "review_suggestion": "拒绝" if assessment.get("decision") == "reject" else "人工复核" if assessment.get("decision") == "manual_review" else "通过",
             "key_evidence": feature_evidence,
+        }
+
+    def _analyze_dashboard_mock(self, dashboard_data, start_date=None, end_date=None):
+        event_total = dashboard_data.get("event_total") or 0
+        high_rate = dashboard_data.get("high_risk_rate") or 0
+        case_total = dashboard_data.get("case_total") or 0
+        resolved_case_total = dashboard_data.get("resolved_case_total") or 0
+        blacklist_hit_count = dashboard_data.get("blacklist_hit_count") or 0
+        ranking = dashboard_data.get("rule_hit_ranking") or []
+        top_rules = ranking[:3]
+        period = f"{start_date or '默认开始日期'} 至 {end_date or '当前时间'}"
+
+        if event_total == 0:
+            return {
+                "summary": f"{period} 暂无风险事件，趋势稳定",
+                "insights": ["当前时间范围内未产生风险事件", "规则命中排行为空", "暂无案件处理压力"],
+                "suggestions": ["扩大时间范围查看历史趋势", "检查事件接入链路是否正常"],
+                "risk_focus": [],
+            }
+
+        high_rate_text = f"{round(high_rate * 100, 2)}%"
+        top_rule_text = "、".join(f"{item.get('rule_name')}({item.get('hit_count')})" for item in top_rules) or "暂无明显集中规则"
+        process_rate = round(resolved_case_total / case_total * 100, 2) if case_total else 0
+        insights = [
+            f"风险事件总数为 {event_total}，高风险占比为 {high_rate_text}",
+            f"案件总数为 {case_total}，已处理 {resolved_case_total}，处理率 {process_rate}%",
+            f"主要命中规则集中在：{top_rule_text}",
+        ]
+        if blacklist_hit_count:
+            insights.append(f"黑名单相关命中 {blacklist_hit_count} 次，需要关注黑名单来源质量")
+
+        suggestions = []
+        if high_rate >= 0.3:
+            suggestions.append("高风险占比较高，建议优先复核高优先级规则阈值和近期活动流量来源")
+        else:
+            suggestions.append("高风险占比处于可控区间，可重点观察规则命中结构变化")
+        if case_total and process_rate < 80:
+            suggestions.append("案件处理率偏低，建议增加审核排班或优化自动化处置规则")
+        if top_rules:
+            suggestions.append(f"建议重点复盘命中最高的规则：{top_rules[0].get('rule_name')}")
+
+        return {
+            "summary": f"{period} 风险事件 {event_total} 起，高风险占比 {high_rate_text}",
+            "insights": insights,
+            "suggestions": suggestions,
+            "risk_focus": [item.get("rule_name") for item in top_rules],
         }

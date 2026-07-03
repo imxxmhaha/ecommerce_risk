@@ -33,3 +33,9 @@ class AiCaseExplainRequest(BaseModel):
     assessment: Dict[str, Any]
     rule_hits: List[Dict[str, Any]]
     feature_snapshot: Dict[str, Any]
+
+
+class AiDashboardAnalyzeRequest(BaseModel):
+    dashboard_data: Dict[str, Any]
+    start_date: Optional[str] = None
+    end_date: Optional[str] = None
