@@ -1,4 +1,4 @@
-from typing import Any, Dict, Optional
+from typing import Any, Dict, List, Optional
 
 from pydantic import BaseModel
 
@@ -17,3 +17,19 @@ class AiRuleValidateRequest(BaseModel):
     condition_json: Dict[str, Any]
     score: Optional[float] = None
     priority: Optional[int] = None
+
+
+class AiRuleOverlapRequest(BaseModel):
+    condition_json: Dict[str, Any]
+    rule_code: Optional[str] = None
+
+
+class AiRuleTestCaseRequest(BaseModel):
+    condition_json: Dict[str, Any]
+    scene: Optional[str] = "order_create"
+
+
+class AiCaseExplainRequest(BaseModel):
+    assessment: Dict[str, Any]
+    rule_hits: List[Dict[str, Any]]
+    feature_snapshot: Dict[str, Any]
