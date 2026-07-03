@@ -2,11 +2,12 @@ from sqlalchemy.orm import Session
 
 from app.core.errors import BizError, CONFLICT, NOT_FOUND, RULE_VALIDATE_ERROR
 from app.models.risk_rule import RiskRule
+from app.models.rule_hit import RuleHit
 from app.services.feature_service import ALLOWED_FEATURES
 from app.services.rule_engine import RuleEngine
 
 
-def rule_to_dict(rule: RiskRule):
+def rule_to_dict(rule: RiskRule, effective_hit_count=None):
     return {
         "id": rule.id,
         "rule_code": rule.rule_code,
@@ -16,7 +17,7 @@ def rule_to_dict(rule: RiskRule):
         "score": float(rule.score),
         "condition_json": rule.condition_json,
         "description": rule.description,
-        "hit_count": rule.hit_count,
+        "hit_count": effective_hit_count if effective_hit_count is not None else rule.hit_count,
         "created_at": rule.created_at,
         "updated_at": rule.updated_at,
     }
@@ -38,7 +39,14 @@ class RuleService:
             query = query.filter((RiskRule.rule_name.like(like)) | (RiskRule.rule_code.like(like)))
         total = query.count()
         items = query.order_by(RiskRule.priority.asc(), RiskRule.id.desc()).offset((page - 1) * page_size).limit(page_size).all()
-        return {"items": [rule_to_dict(x) for x in items], "total": total, "page": page, "page_size": page_size}
+        rule_ids = [item.id for item in items]
+        hit_counts = {}
+        if rule_ids:
+            rows = db.query(RuleHit.rule_id, RiskRule.rule_status).join(RiskRule, RuleHit.rule_id == RiskRule.id).filter(RuleHit.rule_id.in_(rule_ids)).all()
+            for rule_id, status in rows:
+                if status == "enabled":
+                    hit_counts[rule_id] = hit_counts.get(rule_id, 0) + 1
+        return {"items": [rule_to_dict(x, hit_counts.get(x.id, 0) if x.rule_status == "enabled" else 0) for x in items], "total": total, "page": page, "page_size": page_size}
 
     def create_rule(self, db: Session, req):
         if db.query(RiskRule).filter(RiskRule.rule_code == req.rule_code).first():

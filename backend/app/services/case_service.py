@@ -5,8 +5,7 @@ from app.models.feature_snapshot import FeatureSnapshot
 from app.models.review_log import ReviewLog
 from app.models.risk_assessment import RiskAssessment
 from app.models.risk_case import RiskCase
-from app.models.risk_rule import RiskRule
-from app.models.rule_hit import RuleHit
+from app.services.effective_risk_service import EffectiveRiskService
 
 
 def case_to_dict(case: RiskCase):
@@ -25,6 +24,9 @@ def case_to_dict(case: RiskCase):
 
 
 class CaseService:
+    def __init__(self):
+        self.effective_risk_service = EffectiveRiskService()
+
     def list_cases(self, db: Session, case_status=None, user_id=None, order_id=None, page=1, page_size=20):
         query = db.query(RiskCase)
         if case_status:
@@ -43,22 +45,21 @@ class CaseService:
             raise BizError(NOT_FOUND, "case not found")
         assessment = db.query(RiskAssessment).filter(RiskAssessment.id == case.assessment_id).first()
         snapshot = db.query(FeatureSnapshot).filter(FeatureSnapshot.assessment_id == case.assessment_id).first()
-        hits = db.query(RuleHit, RiskRule).join(RiskRule, RuleHit.rule_id == RiskRule.id).filter(RuleHit.assessment_id == case.assessment_id).all()
         logs = db.query(ReviewLog).filter(ReviewLog.case_id == case.id).order_by(ReviewLog.created_at.asc()).all()
+
+        effective = self.effective_risk_service.effective_assessment(db, assessment) if assessment else None
+
         return {
             "case": case_to_dict(case),
             "assessment": {
-                "id": assessment.id,
-                "risk_score": float(assessment.risk_score),
-                "risk_level": assessment.risk_level,
-                "decision": assessment.decision,
-                "created_at": assessment.created_at,
-            } if assessment else None,
+                "id": effective["id"],
+                "risk_score": effective["risk_score"],
+                "risk_level": effective["risk_level"],
+                "decision": effective["decision"],
+                "created_at": effective["created_at"],
+            } if effective else None,
             "feature_snapshot": snapshot.feature_json if snapshot else {},
-            "rule_hits": [
-                {"rule_code": r.rule_code, "rule_name": r.rule_name, "hit_score": float(h.hit_score), "hit_message": h.hit_message}
-                for h, r in hits
-            ],
+            "rule_hits": effective["rule_hits"] if effective else [],
             "review_logs": [
                 {"id": log.id, "operator_id": log.operator_id, "action_type": log.action_type, "from_status": log.from_status, "to_status": log.to_status, "action_remark": log.action_remark, "created_at": log.created_at}
                 for log in logs

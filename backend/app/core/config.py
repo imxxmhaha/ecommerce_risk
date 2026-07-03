@@ -1,14 +1,18 @@
 from functools import lru_cache
+from pathlib import Path
 
 from pydantic import Field
 from pydantic_settings import BaseSettings
+
+# backend/ 目录的绝对路径
+_BACKEND_DIR = Path(__file__).resolve().parent.parent.parent
 
 
 class Settings(BaseSettings):
     db_host: str = Field("localhost", alias="DB_HOST")
     db_port: int = Field(3306, alias="DB_PORT")
     db_user: str = Field("root", alias="DB_USER")
-    db_password: str = Field("123456", alias="DB_PASSWORD")
+    db_password: str = Field("root", alias="DB_PASSWORD")
     db_name: str = Field("ecommerce_risk_control", alias="DB_NAME")
     ai_mock: bool = Field(True, alias="AI_MOCK")
     llm_api_key: str = Field("", alias="LLM_API_KEY")
@@ -17,7 +21,7 @@ class Settings(BaseSettings):
     bootstrap_admin_token: str = Field("", alias="BOOTSTRAP_ADMIN_TOKEN")
 
     class Config:
-        env_file = ".env"
+        env_file = str(_BACKEND_DIR / ".env")
         populate_by_name = True
 
     @property
