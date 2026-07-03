@@ -3,7 +3,7 @@
     <div class="page-title"><h2>案件管理</h2></div>
     <div class="panel toolbar">
       <el-select v-model="query.case_status" placeholder="案件状态" clearable style="width: 160px">
-        <el-option label="待处理" value="pending" /><el-option label="审核中" value="reviewing" /><el-option label="已通过" value="approved" /><el-option label="已拒绝" value="rejected" />
+        <el-option label="待处理" value="pending" /><el-option label="已通过" value="approved" /><el-option label="已拒绝" value="rejected" />
       </el-select>
       <el-input v-model="query.user_id" placeholder="用户编号" style="width: 180px" />
       <el-input v-model="query.order_id" placeholder="订单编号" style="width: 180px" />

@@ -42,11 +42,17 @@ const caseId = route.params.caseId as string
 const detail = ref<any>(null)
 const review = ref({ case_id: Number(caseId), review_result: 'approved', review_remark: '' })
 
-const statusMap: Record<string, string> = { pending: '待处理', reviewing: '审核中', approved: '已通过', rejected: '已拒绝' }
+const statusMap: Record<string, string> = { pending: '待处理', approved: '已通过', rejected: '已拒绝' }
 const isPending = computed(() => detail.value?.case?.case_status === 'pending')
 const statusText = computed(() => statusMap[detail.value?.case?.case_status] || detail.value?.case?.case_status)
 
-async function load() { detail.value = await getCaseDetail(caseId) }
+async function load() {
+  detail.value = await getCaseDetail(caseId)
+  // 根据案件实际状态初始化审核结论下拉框
+  if (detail.value?.case?.case_status && detail.value.case.case_status !== 'pending') {
+    review.value.review_result = detail.value.case.case_status
+  }
+}
 async function submitReview() { await reviewCase(review.value); ElMessage.success('审核已提交'); load() }
 onMounted(load)
 </script>
