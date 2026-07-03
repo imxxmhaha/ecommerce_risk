@@ -22,6 +22,5 @@ jobs:
           script: |
             cd /xxm/app/docker-app/ecom-risk/ecommerce_risk
             git pull 
-            cd ../
             chmod +x deploy.sh
             ./deploy.sh --all
