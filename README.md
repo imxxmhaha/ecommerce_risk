@@ -7,10 +7,37 @@
 
 ## 数据库初始化
 
-执行笔记目录中的 SQL：
+本地手动部署时执行：
 
 ```bash
-mysql -uroot -p < ../01_笔记/01.数据实体详细设计/ecommerce_risk_schema.sql
+mysql -uroot -p < backend/sql/ecommerce_risk_schema.sql
+mysql -uroot -p < backend/sql/ecommerce_risk_seed_data.sql
+```
+
+Docker Compose 部署会自动初始化这两个脚本。
+
+## Docker Compose 部署
+
+```bash
+docker compose up -d --build
+```
+
+访问地址：
+
+- 前端：`http://localhost:8080`
+- 后端接口文档：`http://localhost:8000/docs`
+- MySQL：`localhost:3306`
+
+MySQL 初始化脚本：
+
+- `backend/sql/ecommerce_risk_schema.sql`
+- `backend/sql/ecommerce_risk_seed_data.sql`
+
+如果需要重新初始化数据库，先删除数据卷：
+
+```bash
+docker compose down -v
+docker compose up -d --build
 ```
 
 ## 后端启动
@@ -24,17 +51,17 @@ uv run uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 
 接口文档：`http://localhost:8000/docs`
 
-## 首个管理员
+## 默认账号
 
-系统不会内置默认账号。首次启动前，在 `.env` 中设置 `BOOTSTRAP_ADMIN_TOKEN`，启动后调用：
+SQL 初始化脚本会创建三个默认后台账号：
 
-```bash
-curl -X POST http://localhost:8000/api/auth/bootstrap-admin ^
-  -H "Content-Type: application/json" ^
-  -d "{\"bootstrap_token\":\"change-me-once\",\"username\":\"admin\",\"password\":\"你的强密码\",\"real_name\":\"风控管理员\"}"
+```text
+risk_admin / 123456
+risk_auditor / 123456
+data_viewer / 123456
 ```
 
-创建完成后使用该账号登录前端，再在“用户权限”页面维护审核员、数据查看人等账号。
+登录后可在“用户权限”页面维护用户、角色和权限。生产环境请及时修改默认密码。
 
 ## 前端启动
 
