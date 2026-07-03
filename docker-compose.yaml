@@ -4,6 +4,8 @@ services:
     container_name: ecommerce-risk-mysql
     restart: unless-stopped
     environment:
+      MYSQL_CHARSET: utf8mb4
+      MYSQL_COLLATION: utf8mb4_unicode_ci
       MYSQL_ROOT_PASSWORD: root123456
       MYSQL_DATABASE: ecommerce_risk_control
       MYSQL_USER: risk_user
