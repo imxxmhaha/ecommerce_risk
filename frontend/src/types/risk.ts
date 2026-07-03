@@ -1,7 +1,9 @@
 export interface RuleHit {
   rule_code: string
   rule_name: string
+  priority?: number
   hit_score: number
+  is_effective?: boolean
   hit_message?: string
 }
 

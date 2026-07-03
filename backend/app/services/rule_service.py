@@ -28,7 +28,7 @@ class RuleService:
         self.engine = RuleEngine()
 
     def enabled_rules(self, db: Session):
-        return db.query(RiskRule).filter(RiskRule.rule_status == "enabled").order_by(RiskRule.priority.asc(), RiskRule.id.asc()).all()
+        return db.query(RiskRule).filter(RiskRule.rule_status == "enabled").order_by(RiskRule.priority.desc(), RiskRule.id.asc()).all()
 
     def list_rules(self, db: Session, rule_status=None, keyword=None, page=1, page_size=20):
         query = db.query(RiskRule)

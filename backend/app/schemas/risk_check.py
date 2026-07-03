@@ -16,6 +16,7 @@ class RuleHitView(BaseModel):
     rule_name: str
     priority: Optional[int] = None
     hit_score: float
+    is_effective: bool = False
     hit_message: Optional[str] = None
 
 

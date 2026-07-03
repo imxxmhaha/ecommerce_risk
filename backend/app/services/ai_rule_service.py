@@ -91,7 +91,7 @@ class AiRuleService:
   "rule_name": "规则名称",
   "rule_status": "disabled",
   "score": 分值(0-100),
-  "priority": 优先级(数值越小越优先),
+  "priority": 优先级(数值越大越优先),
   "condition_json": 规则条件JSON,
   "description": "规则描述",
   "hit_message_template": "命中提示模板"

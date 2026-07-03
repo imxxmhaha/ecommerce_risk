@@ -57,6 +57,7 @@ class RiskCheckService:
             score = self.decision_service.calculate_score(hit_views)
             level = self.decision_service.calculate_level(score)
             decision = self.decision_service.calculate_decision(score, level, hit_views)
+            marked_hit_views = self.decision_service.mark_effective_hit(hit_views)
 
             assessment = RiskAssessment(
                 event_id=event.id,
@@ -102,7 +103,7 @@ class RiskCheckService:
                 "risk_level": level,
                 "decision": decision,
                 "case_id": case_id,
-                "rule_hits": [{k: v for k, v in hit.items() if k != "rule_id"} for hit in hit_views],
+                "rule_hits": [{k: v for k, v in hit.items() if k != "rule_id"} for hit in marked_hit_views],
                 "feature_snapshot": features,
             }
         except Exception:

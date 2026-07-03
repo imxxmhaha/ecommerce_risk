@@ -175,7 +175,7 @@ CREATE TABLE IF NOT EXISTS `risk_rules` (
     `rule_code` VARCHAR(64) NOT NULL COMMENT '规则编码',
     `rule_name` VARCHAR(128) NOT NULL COMMENT '规则名称',
     `rule_status` VARCHAR(32) NOT NULL DEFAULT 'enabled' COMMENT '规则状态：enabled/disabled',
-    `priority` INT NOT NULL DEFAULT 100 COMMENT '规则优先级，数值越小优先级越高',
+    `priority` INT NOT NULL DEFAULT 100 COMMENT '规则优先级，数值越大优先级越高',
     `score` DECIMAL(5,2) NOT NULL DEFAULT 0.00 COMMENT '命中分值',
     `condition_json` JSON NOT NULL COMMENT '规则条件JSON',
     `description` TEXT NULL COMMENT '规则描述',
