@@ -1,11 +1,11 @@
 #!/bin/bash
 set -euo pipefail
 
-# 解析参数：-v 表示 down 时删除数据卷（默认不删除）
-REMOVE_VOLUMES=""
+# 解析参数：-v 表示同时删除 mysql 数据卷（默认保留 mysql 数据）
+REMOVE_MYSQL_VOLUME=false
 for arg in "$@"; do
     case "$arg" in
-        -v|--volumes) REMOVE_VOLUMES="-v" ;;
+        -v|--volumes) REMOVE_MYSQL_VOLUME=true ;;
     esac
 done
 
@@ -31,8 +31,13 @@ echo "    配置检查通过"
 echo ""
 echo "==> [2/3] 检查并清理已存在的服务..."
 if docker compose -f "${COMPOSE_FILE}" ps --all -q | grep -q .; then
-  echo "    检测到已有服务，执行 docker compose down ${REMOVE_VOLUMES}..."
-  docker compose -f "${COMPOSE_FILE}" down ${REMOVE_VOLUMES}
+  if [ "$REMOVE_MYSQL_VOLUME" = true ]; then
+    echo "    检测到已有服务，执行 docker compose down -v（含 mysql 数据卷）..."
+    docker compose -f "${COMPOSE_FILE}" down -v
+  else
+    echo "    检测到已有服务，执行 docker compose down（保留 mysql 数据卷）..."
+    docker compose -f "${COMPOSE_FILE}" down
+  fi
 else
   echo "    未检测到已存在的 Compose 服务"
 fi
