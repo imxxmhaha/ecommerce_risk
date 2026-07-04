@@ -30,6 +30,108 @@ WHERE (`blacklist_type`, `blacklist_value`) IN (
     ('address', '高风险地区A-共享仓')
 );
 
+-- ============================================
+-- 初始化后台角色、默认用户、权限和菜单
+-- 默认用户密码：
+-- risk_admin / 123456
+-- risk_auditor / 123456
+-- data_viewer / 123456
+-- ============================================
+INSERT IGNORE INTO `sys_roles` (`role_code`, `role_name`, `description`, `status`) VALUES
+('risk_admin', '风控管理员', '维护规则、维护黑名单、查看统计看板、管理后台用户权限', 'enabled'),
+('risk_auditor', '风控审核员', '查看风险结果、审核案件、填写处理结论', 'enabled'),
+('data_viewer', '数据查看人', '查看用户画像、历史风险记录和命中统计', 'enabled');
+
+INSERT IGNORE INTO `sys_users` (`username`, `password_hash`, `real_name`, `status`) VALUES
+('risk_admin', 'pbkdf2_sha256$100000$ecommerce-risk-default$748ed10144a8eb6b367637cc1ddd555d360c17f6294ac6c0db592d341d05b306', '风控管理员', 'enabled'),
+('risk_auditor', 'pbkdf2_sha256$100000$ecommerce-risk-default$748ed10144a8eb6b367637cc1ddd555d360c17f6294ac6c0db592d341d05b306', '风控审核员', 'enabled'),
+('data_viewer', 'pbkdf2_sha256$100000$ecommerce-risk-default$748ed10144a8eb6b367637cc1ddd555d360c17f6294ac6c0db592d341d05b306', '数据查看人', 'enabled');
+
+INSERT IGNORE INTO `sys_user_roles` (`user_id`, `role_id`)
+SELECT u.id, r.id FROM `sys_users` u JOIN `sys_roles` r ON r.role_code = 'risk_admin' WHERE u.username = 'risk_admin';
+INSERT IGNORE INTO `sys_user_roles` (`user_id`, `role_id`)
+SELECT u.id, r.id FROM `sys_users` u JOIN `sys_roles` r ON r.role_code = 'risk_auditor' WHERE u.username = 'risk_auditor';
+INSERT IGNORE INTO `sys_user_roles` (`user_id`, `role_id`)
+SELECT u.id, r.id FROM `sys_users` u JOIN `sys_roles` r ON r.role_code = 'data_viewer' WHERE u.username = 'data_viewer';
+
+INSERT IGNORE INTO `sys_permissions` (`permission_code`, `permission_name`, `permission_type`, `description`) VALUES
+('risk:check', '执行风险检查', 'api', '允许提交风险检查请求'),
+('risk:assessment:read', '查看风险结果', 'api', '允许查看风险评估详情'),
+('rule:read', '查看规则', 'api', '允许查看规则列表和规则详情'),
+('rule:write', '维护规则', 'api', '允许新增、编辑、启停和删除规则'),
+('rule:ai', 'AI辅助规则', 'api', '允许使用AI辅助生成、解释和校验规则'),
+('case:read', '查看案件', 'api', '允许查看案件列表和案件详情'),
+('case:review', '审核案件', 'api', '允许提交案件审核结论'),
+('blacklist:read', '查看黑名单', 'api', '允许查看黑名单列表'),
+('blacklist:write', '维护黑名单', 'api', '允许新增、删除和导入黑名单'),
+('profile:read', '查看用户画像', 'api', '允许查看用户画像和历史风险记录'),
+('dashboard:read', '查看运营看板', 'api', '允许查看运营看板和命中统计'),
+('system:user:read', '查看后台用户', 'api', '允许查看后台用户'),
+('system:user:write', '维护后台用户', 'api', '允许新增用户、启停用户和重置密码'),
+('system:role:read', '查看角色', 'api', '允许查看角色'),
+('system:role:write', '维护角色', 'api', '允许新增角色'),
+('system:permission:read', '查看权限', 'api', '允许查看权限点');
+
+INSERT IGNORE INTO `sys_menus` (`menu_code`, `menu_name`, `route_path`, `permission_code`, `icon`, `sort_order`, `status`) VALUES
+('risk_check', '风险检查', '/risk-check', 'risk:check', 'Search', 10, 'enabled'),
+('rules', '规则管理', '/rules', 'rule:write', 'Setting', 20, 'enabled'),
+('ai_rules', 'AI 辅助规则', '/ai-rules', 'rule:ai', 'MagicStick', 30, 'enabled'),
+('cases', '案件管理', '/cases', 'case:read', 'Tickets', 40, 'enabled'),
+('blacklists', '黑名单管理', '/blacklists', 'blacklist:read', 'CircleClose', 50, 'enabled'),
+('profile', '用户画像', '/users/profile', 'profile:read', 'User', 60, 'enabled'),
+('dashboard', '运营看板', '/dashboard', 'dashboard:read', 'DataAnalysis', 70, 'enabled'),
+('system_users', '用户权限', '/system/users', 'system:user:read', 'Lock', 80, 'enabled');
+
+INSERT IGNORE INTO `sys_role_permissions` (`role_id`, `permission_id`)
+SELECT r.id, p.id FROM `sys_roles` r JOIN `sys_permissions` p ON 1 = 1 WHERE r.role_code = 'risk_admin';
+INSERT IGNORE INTO `sys_role_permissions` (`role_id`, `permission_id`)
+SELECT r.id, p.id FROM `sys_roles` r JOIN `sys_permissions` p ON p.permission_code IN ('risk:check', 'risk:assessment:read', 'case:read', 'case:review', 'profile:read')
+WHERE r.role_code = 'risk_auditor';
+INSERT IGNORE INTO `sys_role_permissions` (`role_id`, `permission_id`)
+SELECT r.id, p.id FROM `sys_roles` r JOIN `sys_permissions` p ON p.permission_code IN ('risk:assessment:read', 'profile:read', 'dashboard:read')
+WHERE r.role_code = 'data_viewer';
+
+-- ============================================
+-- 初始化风险规则数据
+-- ============================================
+INSERT INTO `risk_rules`
+(`rule_code`, `rule_name`, `rule_status`, `priority`, `score`, `condition_json`, `description`)
+VALUES
+-- 支付类（低风险，priority 20-29）
+('PAYMENT_METHOD_RISK', '支付方式风险较高', 'enabled', 29, 25.00, '{"operator":"in","feature":"payment_method","value":["virtual_card","unknown"]}', '支付方式属于高风险或未知类型'),
+-- 用户行为-低风险（priority 30-39）
+('LOGISTICS_COMPLAINT_REPEAT', '物流投诉重复发生', 'enabled', 36, 30.00, '{"operator":">","feature":"logistics_complaint_count_30d","value":2}', '用户近30天物流投诉次数过多'),
+('USER_CANCEL_7D_HIGH', '用户近期取消订单过多', 'enabled', 38, 35.00, '{"operator":">","feature":"user_cancel_count_7d","value":3}', '用户近7天取消订单次数过多'),
+('AFTER_SALE_7D_HIGH', '用户近期售后申请过多', 'enabled', 37, 35.00, '{"operator":">","feature":"user_after_sale_count_7d","value":2}', '用户近7天售后申请次数过多'),
+('USER_COMPLAINT_HIGH', '用户投诉次数过多', 'enabled', 39, 40.00, '{"operator":">","feature":"user_complaint_count_90d","value":3}', '用户近90天投诉次数过多'),
+-- 订单类（中低风险，priority 40-49）
+('ORDER_ITEMS_HIGH', '订单商品数量异常', 'enabled', 46, 35.00, '{"operator":">","feature":"order_item_count","value":20}', '单笔订单商品数量异常偏高'),
+('FIRST_ORDER_HIGH_AMOUNT', '首单金额异常偏高', 'enabled', 47, 45.00, '{"operator":"and","conditions":[{"feature":"is_first_order","operator":"=","value":true},{"feature":"order_amount","operator":">","value":2000}]}', '用户首单金额异常偏高'),
+('COUPON_ABUSE', '优惠券使用异常', 'enabled', 48, 50.00, '{"operator":"and","conditions":[{"feature":"is_coupon_used","operator":"=","value":true},{"feature":"coupon_discount_rate","operator":">","value":0.5}]}', '订单使用高折扣优惠券，存在薅羊毛风险'),
+('ORDER_AMOUNT_HIGH', '订单金额过高', 'enabled', 49, 55.00, '{"operator":">","feature":"order_amount","value":5000}', '订单金额超过高额阈值'),
+-- 地址类（中风险，priority 50-59）
+('ADDRESS_IP_MISMATCH', '地址与IP所在地不一致', 'enabled', 56, 45.00, '{"operator":"=","feature":"is_address_ip_mismatch","value":true}', '收货地址与请求IP所在地不一致'),
+('ADDRESS_ORDER_1D_HIGH', '地址近期订单过多', 'enabled', 57, 50.00, '{"operator":">","feature":"address_order_count_1d","value":10}', '同一地址1天内订单数量过多'),
+('ADDRESS_USER_COUNT_HIGH', '地址关联用户过多', 'enabled', 58, 55.00, '{"operator":">","feature":"address_related_user_count","value":4}', '同一收货地址关联多个用户'),
+('ADDRESS_HIGH_RISK_AREA', '收货地址命中高风险地区', 'enabled', 59, 60.00, '{"operator":"=","feature":"is_address_high_risk_area","value":true}', '收货地址属于高风险地区'),
+-- 设备/IP/手机类（中高风险，priority 60-69）
+('IP_ORDER_1H_HIGH', 'IP短时间下单频繁', 'enabled', 65, 50.00, '{"operator":">","feature":"ip_order_count_1h","value":10}', '同一IP 1小时内下单次数过多'),
+('DEVICE_ORDER_1H_HIGH', '设备短时间下单频繁', 'enabled', 66, 55.00, '{"operator":">","feature":"device_order_count_1h","value":8}', '同一设备1小时内下单次数过多'),
+('IP_HIGH_RISK', 'IP命中高风险地区', 'enabled', 67, 55.00, '{"operator":"=","feature":"is_ip_high_risk_area","value":true}', '请求IP归属高风险地区'),
+('PHONE_MULTI_USER', '手机号关联用户过多', 'enabled', 68, 60.00, '{"operator":">","feature":"phone_related_user_count","value":3}', '同一手机号关联多个用户，存在账号团伙风险'),
+('DEVICE_MULTI_USER', '设备关联用户过多', 'enabled', 69, 65.00, '{"operator":">","feature":"device_related_user_count","value":5}', '同一设备关联多个用户，存在批量注册或刷单风险'),
+-- 用户行为类（高风险，priority 70-79）
+('USER_ORDER_1H_HIGH', '用户短时间下单频繁', 'enabled', 75, 65.00, '{"operator":">","feature":"user_order_count_1h","value":5}', '同一用户1小时内下单次数过多'),
+('USER_REGISTER_NEW_HIGH_AMOUNT', '新用户高额订单', 'enabled', 76, 70.00, '{"operator":"and","conditions":[{"feature":"user_register_days","operator":"<","value":7},{"feature":"order_amount","operator":">","value":3000}]}', '注册7天内的新用户发起高额订单'),
+('USER_REFUND_RATE_HIGH', '用户退款率过高', 'enabled', 77, 75.00, '{"operator":">","feature":"user_refund_rate_90d","value":0.3}', '用户近90天退款率超过30%'),
+('USER_REJECT_HISTORY', '用户历史拒绝次数过多', 'enabled', 78, 80.00, '{"operator":">","feature":"user_reject_count_180d","value":1}', '用户历史存在多次拒绝处置'),
+('USER_HIGH_RISK_HISTORY', '用户历史高风险次数过多', 'enabled', 79, 85.00, '{"operator":">","feature":"user_high_risk_count_180d","value":2}', '用户历史多次被判定为高风险'),
+-- 黑名单类（最严重，priority 90-99，score 95-100）
+('ORDER_BLACKLIST', '订单命中黑名单', 'enabled', 98, 95.00, '{"operator":"=","feature":"is_order_blacklisted","value":true}', '订单编号命中有效黑名单，建议直接拒绝'),
+('USER_BLACKLIST', '用户命中黑名单', 'enabled', 99, 100.00, '{"operator":"=","feature":"is_user_blacklisted","value":true}', '用户编号命中有效黑名单，建议直接拒绝或人工复核');
+
+
+
 -- ============================================================
 -- 黑名单数据
 -- ============================================================
@@ -92,18 +194,18 @@ VALUES
 INSERT INTO `risk_assessments`
 (`id`, `event_id`, `risk_score`, `risk_level`, `decision`, `assessment_status`, `created_at`)
 VALUES
-(8001, 7001, 100.00, 'high', 'manual_review', 'completed', '2026-07-01 10:00:03'),
+(8001, 7001, 70.00, 'medium', 'manual_review', 'completed', '2026-07-01 10:00:03'),
 (8002, 7002, 0.00, 'low', 'pass', 'completed', '2026-07-01 10:08:02'),
-(8003, 7003, 20.00, 'low', 'pass', 'completed', '2026-07-01 11:20:04'),
-(8004, 7004, 20.00, 'low', 'pass', 'completed', '2026-07-01 12:10:03'),
+(8003, 7003, 35.00, 'medium', 'manual_review', 'completed', '2026-07-01 11:20:04'),
+(8004, 7004, 30.00, 'medium', 'manual_review', 'completed', '2026-07-01 12:10:03'),
 (8005, 7005, 100.00, 'high', 'reject', 'completed', '2026-07-02 09:35:05'),
-(8006, 7006, 55.00, 'medium', 'manual_review', 'completed', '2026-07-02 10:05:04'),
+(8006, 7006, 70.00, 'medium', 'manual_review', 'completed', '2026-07-02 10:05:04'),
 (8007, 7007, 0.00, 'low', 'pass', 'completed', '2026-07-02 14:20:02'),
-(8008, 7008, 85.00, 'high', 'manual_review', 'completed', '2026-07-02 16:45:03'),
-(8009, 7009, 25.00, 'low', 'pass', 'completed', '2026-07-03 09:10:03'),
-(8010, 7010, 45.00, 'medium', 'manual_review', 'completed', '2026-07-03 10:30:04'),
+(8008, 7008, 60.00, 'medium', 'manual_review', 'completed', '2026-07-02 16:45:03'),
+(8009, 7009, 55.00, 'medium', 'manual_review', 'completed', '2026-07-03 09:10:03'),
+(8010, 7010, 75.00, 'high', 'manual_review', 'completed', '2026-07-03 10:30:04'),
 (8011, 7011, 0.00, 'low', 'pass', 'completed', '2026-07-03 11:45:02'),
-(8012, 7012, 35.00, 'medium', 'manual_review', 'completed', '2026-07-03 13:05:04');
+(8012, 7012, 65.00, 'medium', 'manual_review', 'completed', '2026-07-03 13:05:04');
 
 -- ============================================================
 -- 特征快照数据
@@ -130,39 +232,39 @@ VALUES
 INSERT INTO `rule_hits`
 (`assessment_id`, `rule_id`, `hit_score`, `hit_message`, `created_at`)
 VALUES
-(8001, (SELECT `id` FROM `risk_rules` WHERE `rule_code` = 'USER_REGISTER_NEW_HIGH_AMOUNT'), 35.00, '注册7天内的新用户发起高额订单', '2026-07-01 10:00:03'),
-(8001, (SELECT `id` FROM `risk_rules` WHERE `rule_code` = 'ORDER_AMOUNT_HIGH'), 25.00, '订单金额超过高额阈值', '2026-07-01 10:00:03'),
-(8001, (SELECT `id` FROM `risk_rules` WHERE `rule_code` = 'ORDER_ITEMS_HIGH'), 15.00, '单笔订单商品数量异常偏高', '2026-07-01 10:00:03'),
-(8001, (SELECT `id` FROM `risk_rules` WHERE `rule_code` = 'COUPON_ABUSE'), 20.00, '订单使用高折扣优惠券，存在薅羊毛风险', '2026-07-01 10:00:03'),
-(8001, (SELECT `id` FROM `risk_rules` WHERE `rule_code` = 'FIRST_ORDER_HIGH_AMOUNT'), 20.00, '用户首单金额异常偏高', '2026-07-01 10:00:03'),
-(8001, (SELECT `id` FROM `risk_rules` WHERE `rule_code` = 'PAYMENT_METHOD_RISK'), 10.00, '支付方式属于高风险或未知类型', '2026-07-01 10:00:03'),
-(8003, (SELECT `id` FROM `risk_rules` WHERE `rule_code` = 'AFTER_SALE_7D_HIGH'), 20.00, '用户近7天售后申请次数过多', '2026-07-01 11:20:04'),
-(8004, (SELECT `id` FROM `risk_rules` WHERE `rule_code` = 'LOGISTICS_COMPLAINT_REPEAT'), 20.00, '用户近30天物流投诉次数过多', '2026-07-01 12:10:03'),
+(8001, (SELECT `id` FROM `risk_rules` WHERE `rule_code` = 'USER_REGISTER_NEW_HIGH_AMOUNT'), 70.00, '注册7天内的新用户发起高额订单', '2026-07-01 10:00:03'),
+(8001, (SELECT `id` FROM `risk_rules` WHERE `rule_code` = 'ORDER_AMOUNT_HIGH'), 55.00, '订单金额超过高额阈值', '2026-07-01 10:00:03'),
+(8001, (SELECT `id` FROM `risk_rules` WHERE `rule_code` = 'ORDER_ITEMS_HIGH'), 35.00, '单笔订单商品数量异常偏高', '2026-07-01 10:00:03'),
+(8001, (SELECT `id` FROM `risk_rules` WHERE `rule_code` = 'COUPON_ABUSE'), 50.00, '订单使用高折扣优惠券，存在薅羊毛风险', '2026-07-01 10:00:03'),
+(8001, (SELECT `id` FROM `risk_rules` WHERE `rule_code` = 'FIRST_ORDER_HIGH_AMOUNT'), 45.00, '用户首单金额异常偏高', '2026-07-01 10:00:03'),
+(8001, (SELECT `id` FROM `risk_rules` WHERE `rule_code` = 'PAYMENT_METHOD_RISK'), 25.00, '支付方式属于高风险或未知类型', '2026-07-01 10:00:03'),
+(8003, (SELECT `id` FROM `risk_rules` WHERE `rule_code` = 'AFTER_SALE_7D_HIGH'), 35.00, '用户近7天售后申请次数过多', '2026-07-01 11:20:04'),
+(8004, (SELECT `id` FROM `risk_rules` WHERE `rule_code` = 'LOGISTICS_COMPLAINT_REPEAT'), 30.00, '用户近30天物流投诉次数过多', '2026-07-01 12:10:03'),
 (8005, (SELECT `id` FROM `risk_rules` WHERE `rule_code` = 'USER_BLACKLIST'), 100.00, '用户编号命中有效黑名单', '2026-07-02 09:35:05'),
-(8005, (SELECT `id` FROM `risk_rules` WHERE `rule_code` = 'ORDER_BLACKLIST'), 100.00, '订单编号命中有效黑名单', '2026-07-02 09:35:05'),
-(8005, (SELECT `id` FROM `risk_rules` WHERE `rule_code` = 'PHONE_MULTI_USER'), 35.00, '同一手机号关联多个用户，存在账号团伙风险', '2026-07-02 09:35:05'),
-(8005, (SELECT `id` FROM `risk_rules` WHERE `rule_code` = 'DEVICE_MULTI_USER'), 35.00, '同一设备关联多个用户，存在批量注册或刷单风险', '2026-07-02 09:35:05'),
-(8005, (SELECT `id` FROM `risk_rules` WHERE `rule_code` = 'IP_HIGH_RISK'), 30.00, '请求IP归属高风险地区', '2026-07-02 09:35:05'),
-(8005, (SELECT `id` FROM `risk_rules` WHERE `rule_code` = 'USER_REGISTER_NEW_HIGH_AMOUNT'), 35.00, '注册7天内的新用户发起高额订单', '2026-07-02 09:35:05'),
-(8005, (SELECT `id` FROM `risk_rules` WHERE `rule_code` = 'USER_REFUND_RATE_HIGH'), 25.00, '用户近90天退款率超过30%', '2026-07-02 09:35:05'),
-(8005, (SELECT `id` FROM `risk_rules` WHERE `rule_code` = 'USER_COMPLAINT_HIGH'), 20.00, '用户近90天投诉次数过多', '2026-07-02 09:35:05'),
-(8005, (SELECT `id` FROM `risk_rules` WHERE `rule_code` = 'USER_HIGH_RISK_HISTORY'), 30.00, '用户历史多次被判定为高风险', '2026-07-02 09:35:05'),
-(8005, (SELECT `id` FROM `risk_rules` WHERE `rule_code` = 'USER_REJECT_HISTORY'), 30.00, '用户历史存在多次拒绝处置', '2026-07-02 09:35:05'),
-(8005, (SELECT `id` FROM `risk_rules` WHERE `rule_code` = 'ORDER_AMOUNT_HIGH'), 25.00, '订单金额超过高额阈值', '2026-07-02 09:35:05'),
-(8005, (SELECT `id` FROM `risk_rules` WHERE `rule_code` = 'COUPON_ABUSE'), 20.00, '订单使用高折扣优惠券，存在薅羊毛风险', '2026-07-02 09:35:05'),
-(8005, (SELECT `id` FROM `risk_rules` WHERE `rule_code` = 'ADDRESS_HIGH_RISK_AREA'), 30.00, '收货地址属于高风险地区', '2026-07-02 09:35:05'),
-(8005, (SELECT `id` FROM `risk_rules` WHERE `rule_code` = 'PAYMENT_METHOD_RISK'), 10.00, '支付方式属于高风险或未知类型', '2026-07-02 09:35:05'),
-(8006, (SELECT `id` FROM `risk_rules` WHERE `rule_code` = 'USER_REGISTER_NEW_HIGH_AMOUNT'), 35.00, '注册7天内的新用户发起高额订单', '2026-07-02 10:05:04'),
-(8006, (SELECT `id` FROM `risk_rules` WHERE `rule_code` = 'FIRST_ORDER_HIGH_AMOUNT'), 20.00, '用户首单金额异常偏高', '2026-07-02 10:05:04'),
-(8008, (SELECT `id` FROM `risk_rules` WHERE `rule_code` = 'ADDRESS_USER_COUNT_HIGH'), 25.00, '同一收货地址关联多个用户', '2026-07-02 16:45:03'),
-(8008, (SELECT `id` FROM `risk_rules` WHERE `rule_code` = 'ADDRESS_ORDER_1D_HIGH'), 20.00, '同一地址1天内订单数量过多', '2026-07-02 16:45:03'),
-(8008, (SELECT `id` FROM `risk_rules` WHERE `rule_code` = 'ADDRESS_IP_MISMATCH'), 10.00, '收货地址与请求IP所在地不一致', '2026-07-02 16:45:03'),
-(8008, (SELECT `id` FROM `risk_rules` WHERE `rule_code` = 'ADDRESS_HIGH_RISK_AREA'), 30.00, '收货地址属于高风险地区', '2026-07-02 16:45:03'),
-(8009, (SELECT `id` FROM `risk_rules` WHERE `rule_code` = 'ORDER_AMOUNT_HIGH'), 25.00, '订单金额超过高额阈值', '2026-07-03 09:10:03'),
-(8010, (SELECT `id` FROM `risk_rules` WHERE `rule_code` = 'USER_REFUND_RATE_HIGH'), 25.00, '用户近90天退款率超过30%', '2026-07-03 10:30:04'),
-(8010, (SELECT `id` FROM `risk_rules` WHERE `rule_code` = 'AFTER_SALE_7D_HIGH'), 20.00, '用户近7天售后申请次数过多', '2026-07-03 10:30:04'),
-(8012, (SELECT `id` FROM `risk_rules` WHERE `rule_code` = 'USER_ORDER_1H_HIGH'), 25.00, '同一用户1小时内下单次数过多', '2026-07-03 13:05:04'),
-(8012, (SELECT `id` FROM `risk_rules` WHERE `rule_code` = 'PAYMENT_METHOD_RISK'), 10.00, '支付方式属于高风险或未知类型', '2026-07-03 13:05:04');
+(8005, (SELECT `id` FROM `risk_rules` WHERE `rule_code` = 'ORDER_BLACKLIST'), 95.00, '订单编号命中有效黑名单', '2026-07-02 09:35:05'),
+(8005, (SELECT `id` FROM `risk_rules` WHERE `rule_code` = 'PHONE_MULTI_USER'), 60.00, '同一手机号关联多个用户，存在账号团伙风险', '2026-07-02 09:35:05'),
+(8005, (SELECT `id` FROM `risk_rules` WHERE `rule_code` = 'DEVICE_MULTI_USER'), 65.00, '同一设备关联多个用户，存在批量注册或刷单风险', '2026-07-02 09:35:05'),
+(8005, (SELECT `id` FROM `risk_rules` WHERE `rule_code` = 'IP_HIGH_RISK'), 55.00, '请求IP归属高风险地区', '2026-07-02 09:35:05'),
+(8005, (SELECT `id` FROM `risk_rules` WHERE `rule_code` = 'USER_REGISTER_NEW_HIGH_AMOUNT'), 70.00, '注册7天内的新用户发起高额订单', '2026-07-02 09:35:05'),
+(8005, (SELECT `id` FROM `risk_rules` WHERE `rule_code` = 'USER_REFUND_RATE_HIGH'), 75.00, '用户近90天退款率超过30%', '2026-07-02 09:35:05'),
+(8005, (SELECT `id` FROM `risk_rules` WHERE `rule_code` = 'USER_COMPLAINT_HIGH'), 40.00, '用户近90天投诉次数过多', '2026-07-02 09:35:05'),
+(8005, (SELECT `id` FROM `risk_rules` WHERE `rule_code` = 'USER_HIGH_RISK_HISTORY'), 85.00, '用户历史多次被判定为高风险', '2026-07-02 09:35:05'),
+(8005, (SELECT `id` FROM `risk_rules` WHERE `rule_code` = 'USER_REJECT_HISTORY'), 80.00, '用户历史存在多次拒绝处置', '2026-07-02 09:35:05'),
+(8005, (SELECT `id` FROM `risk_rules` WHERE `rule_code` = 'ORDER_AMOUNT_HIGH'), 55.00, '订单金额超过高额阈值', '2026-07-02 09:35:05'),
+(8005, (SELECT `id` FROM `risk_rules` WHERE `rule_code` = 'COUPON_ABUSE'), 50.00, '订单使用高折扣优惠券，存在薅羊毛风险', '2026-07-02 09:35:05'),
+(8005, (SELECT `id` FROM `risk_rules` WHERE `rule_code` = 'ADDRESS_HIGH_RISK_AREA'), 60.00, '收货地址属于高风险地区', '2026-07-02 09:35:05'),
+(8005, (SELECT `id` FROM `risk_rules` WHERE `rule_code` = 'PAYMENT_METHOD_RISK'), 25.00, '支付方式属于高风险或未知类型', '2026-07-02 09:35:05'),
+(8006, (SELECT `id` FROM `risk_rules` WHERE `rule_code` = 'USER_REGISTER_NEW_HIGH_AMOUNT'), 70.00, '注册7天内的新用户发起高额订单', '2026-07-02 10:05:04'),
+(8006, (SELECT `id` FROM `risk_rules` WHERE `rule_code` = 'FIRST_ORDER_HIGH_AMOUNT'), 45.00, '用户首单金额异常偏高', '2026-07-02 10:05:04'),
+(8008, (SELECT `id` FROM `risk_rules` WHERE `rule_code` = 'ADDRESS_USER_COUNT_HIGH'), 55.00, '同一收货地址关联多个用户', '2026-07-02 16:45:03'),
+(8008, (SELECT `id` FROM `risk_rules` WHERE `rule_code` = 'ADDRESS_ORDER_1D_HIGH'), 50.00, '同一地址1天内订单数量过多', '2026-07-02 16:45:03'),
+(8008, (SELECT `id` FROM `risk_rules` WHERE `rule_code` = 'ADDRESS_IP_MISMATCH'), 45.00, '收货地址与请求IP所在地不一致', '2026-07-02 16:45:03'),
+(8008, (SELECT `id` FROM `risk_rules` WHERE `rule_code` = 'ADDRESS_HIGH_RISK_AREA'), 60.00, '收货地址属于高风险地区', '2026-07-02 16:45:03'),
+(8009, (SELECT `id` FROM `risk_rules` WHERE `rule_code` = 'ORDER_AMOUNT_HIGH'), 55.00, '订单金额超过高额阈值', '2026-07-03 09:10:03'),
+(8010, (SELECT `id` FROM `risk_rules` WHERE `rule_code` = 'USER_REFUND_RATE_HIGH'), 75.00, '用户近90天退款率超过30%', '2026-07-03 10:30:04'),
+(8010, (SELECT `id` FROM `risk_rules` WHERE `rule_code` = 'AFTER_SALE_7D_HIGH'), 35.00, '用户近7天售后申请次数过多', '2026-07-03 10:30:04'),
+(8012, (SELECT `id` FROM `risk_rules` WHERE `rule_code` = 'USER_ORDER_1H_HIGH'), 65.00, '同一用户1小时内下单次数过多', '2026-07-03 13:05:04'),
+(8012, (SELECT `id` FROM `risk_rules` WHERE `rule_code` = 'PAYMENT_METHOD_RISK'), 25.00, '支付方式属于高风险或未知类型', '2026-07-03 13:05:04');
 
 -- ============================================================
 -- 风险案件数据
@@ -183,16 +285,16 @@ VALUES
 INSERT INTO `review_logs`
 (`case_id`, `operator_id`, `action_type`, `from_status`, `to_status`, `action_remark`, `created_at`)
 VALUES
-(9001, 'system', 'create', NULL, 'pending', '风险等级 high，系统自动创建案件', '2026-07-01 10:00:06'),
+(9001, 'system', 'create', NULL, 'pending', '风险等级 medium，系统自动创建案件', '2026-07-01 10:00:06'),
 (9001, 'A10001', 'approve', 'pending', 'approved', '确认订单金额和优惠券使用异常，建议人工放行但持续关注', '2026-07-01 10:25:00'),
 (9002, 'system', 'create', NULL, 'pending', '命中黑名单规则，系统自动创建案件', '2026-07-02 09:35:08'),
 (9002, 'A10002', 'reject', 'pending', 'rejected', '用户、订单、设备、IP 多维命中黑名单，拒绝交易', '2026-07-02 09:50:00'),
 (9003, 'system', 'create', NULL, 'pending', '处理中风险 manual_review，系统自动创建案件', '2026-07-02 10:05:08'),
 (9003, 'A10001', 'approve', 'pending', 'approved', '电话核验通过，允许继续交易', '2026-07-02 11:00:00'),
 (9003, 'A10001', 'resolve', 'approved', 'resolved', '案件归档完成', '2026-07-02 11:20:00'),
-(9004, 'system', 'create', NULL, 'pending', '地址维度规则累计达到高风险，系统自动创建案件', '2026-07-02 16:45:06'),
-(9005, 'system', 'create', NULL, 'pending', '售后和退款率触发人工审核', '2026-07-03 10:30:07'),
-(9006, 'system', 'create', NULL, 'pending', '短时间下单和未知支付方式触发人工审核', '2026-07-03 13:05:07');
+(9004, 'system', 'create', NULL, 'pending', '地址维度规则累计达到中风险，系统自动创建案件', '2026-07-02 16:45:06'),
+(9005, 'system', 'create', NULL, 'pending', '退款率高风险等级 high，系统自动创建案件', '2026-07-03 10:30:07'),
+(9006, 'system', 'create', NULL, 'pending', '短时间下单频繁触发中风险，系统自动创建案件', '2026-07-03 13:05:07');
 
 -- 根据演示命中数据刷新规则累计命中次数
 UPDATE `risk_rules` r
@@ -204,4 +306,5 @@ LEFT JOIN (
 SET r.`hit_count` = COALESCE(h.`hit_total`, 0);
 
 COMMIT;
+
 
