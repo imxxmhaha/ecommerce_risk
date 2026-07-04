@@ -12,8 +12,10 @@ service = RuleService()
 
 
 @router.get("", dependencies=[Depends(require_permission("rule:read"))])
-def list_rules(rule_status: str = None, keyword: str = None, page: int = 1, page_size: int = 20, db: Session = Depends(get_db)):
-    return ok(service.list_rules(db, rule_status, keyword, page, page_size))
+def list_rules(rule_status: str = None, keyword: str = None, page: int = 1, page_size: int = 20, sort_by: str = None, sort_order: str = None, db: Session = Depends(get_db)):
+    # 转换为整数，空字符串视为None
+    status = int(rule_status) if rule_status and rule_status.strip() != '' else None
+    return ok(service.list_rules(db, status, keyword, page, page_size, sort_by, sort_order))
 
 
 @router.post("", dependencies=[Depends(require_permission("rule:write"))])

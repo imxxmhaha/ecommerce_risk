@@ -11,5 +11,6 @@ class BlacklistRepo:
         return db.query(Blacklist).filter(
             Blacklist.blacklist_type == blacklist_type,
             Blacklist.blacklist_value == str(blacklist_value),
-            Blacklist.status == "active",
+            Blacklist.status == 1,
+            Blacklist.deleted == 0,
         ).first()

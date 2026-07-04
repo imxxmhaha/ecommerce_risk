@@ -3,6 +3,7 @@ export interface Blacklist {
   blacklist_type: string
   blacklist_value: string
   remark?: string
-  status: string
+  status: number
+  deleted: number
   created_at?: string
 }

@@ -1,4 +1,4 @@
-from sqlalchemy import BigInteger, Column, DateTime, DECIMAL, Integer, JSON, String, Text, func
+from sqlalchemy import BigInteger, Column, DateTime, DECIMAL, Integer, JSON, SmallInteger, String, Text, func
 
 from app.core.database import Base
 
@@ -9,7 +9,7 @@ class RiskRule(Base):
     id = Column(BigInteger, primary_key=True, autoincrement=True)
     rule_code = Column(String(64), nullable=False, unique=True)
     rule_name = Column(String(128), nullable=False)
-    rule_status = Column(String(32), nullable=False, default="enabled")
+    rule_status = Column(SmallInteger, nullable=False, default=1)
     priority = Column(Integer, nullable=False, default=100)
     score = Column(DECIMAL(5, 2), nullable=False, default=0)
     condition_json = Column(JSON, nullable=False)

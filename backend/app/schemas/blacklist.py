@@ -12,3 +12,8 @@ class BlacklistCreateRequest(BaseModel):
 
 class BlacklistDeleteRequest(BaseModel):
     id: int
+
+
+class BlacklistStatusRequest(BaseModel):
+    id: int
+    status: int

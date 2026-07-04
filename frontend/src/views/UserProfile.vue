@@ -3,7 +3,7 @@
     <div class="page-title"><h2>用户画像</h2></div>
     <div class="panel toolbar">
       <el-input v-model="userId" placeholder="用户编号" style="width: 240px" />
-      <el-button type="primary" @click="load">查询</el-button>
+      <el-button type="primary" @click="load()">查询</el-button>
     </div>
     <div v-if="profile" class="metric-grid">
       <div class="metric"><div class="metric-label">事件总数</div><div class="metric-value">{{ profile.summary.event_count }}</div></div>

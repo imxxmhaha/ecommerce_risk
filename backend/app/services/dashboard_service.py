@@ -30,7 +30,7 @@ class DashboardService:
         ranking_rows = (
             db.query(RiskRule.rule_name, RiskRule.rule_code, func.count(RuleHit.id))
             .join(RuleHit, RuleHit.rule_id == RiskRule.id)
-            .filter(RuleHit.created_at >= start, RuleHit.created_at <= end, RiskRule.rule_status == "enabled")
+            .filter(RuleHit.created_at >= start, RuleHit.created_at <= end, RiskRule.rule_status == 1)
             .group_by(RiskRule.rule_name, RiskRule.rule_code)
             .order_by(func.count(RuleHit.id).desc())
             .limit(10)

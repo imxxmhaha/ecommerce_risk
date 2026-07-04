@@ -174,7 +174,7 @@ CREATE TABLE IF NOT EXISTS `risk_rules` (
     `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT COMMENT '主键ID',
     `rule_code` VARCHAR(64) NOT NULL COMMENT '规则编码',
     `rule_name` VARCHAR(128) NOT NULL COMMENT '规则名称',
-    `rule_status` VARCHAR(32) NOT NULL DEFAULT 'enabled' COMMENT '规则状态：enabled/disabled',
+    `rule_status` TINYINT NOT NULL DEFAULT 1 COMMENT '规则状态：0=禁用 1=启用',
     `priority` INT NOT NULL DEFAULT 100 COMMENT '规则优先级，数值越大优先级越高',
     `score` DECIMAL(5,2) NOT NULL DEFAULT 0.00 COMMENT '命中分值',
     `condition_json` JSON NOT NULL COMMENT '规则条件JSON',
@@ -237,13 +237,14 @@ CREATE TABLE IF NOT EXISTS `blacklists` (
     `blacklist_type` VARCHAR(64) NOT NULL COMMENT '黑名单类型：user_id/phone/address/device_id/ip/order_id',
     `blacklist_value` VARCHAR(128) NOT NULL COMMENT '黑名单命中值',
     `remark` TEXT NULL COMMENT '备注',
-    `status` VARCHAR(32) NOT NULL DEFAULT 'active' COMMENT '状态：active/inactive/deleted',
+    `status` TINYINT NOT NULL DEFAULT 0 COMMENT '状态：0=未启用 1=已启用',
+    `deleted` TINYINT NOT NULL DEFAULT 0 COMMENT '逻辑删除：0=未删除 1=已删除',
     `created_by` VARCHAR(64) NULL COMMENT '创建人ID',
     `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
     `updated_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
     PRIMARY KEY (`id`),
     UNIQUE KEY `uk_blacklists_type_value` (`blacklist_type`, `blacklist_value`),
-    KEY `idx_blacklists_status_type` (`status`, `blacklist_type`),
+    KEY `idx_blacklists_deleted_status` (`deleted`, `status`),
     KEY `idx_blacklists_created_at` (`created_at`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='黑名单表';
 

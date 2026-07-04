@@ -8,6 +8,9 @@
     <el-tabs v-model="activeTab" class="panel">
       <el-tab-pane label="后台用户" name="users">
         <el-table :data="users">
+          <el-table-column label="序号" width="60" align="center">
+            <template #default="{ $index }">{{ (userQuery.page - 1) * userQuery.page_size + $index + 1 }}</template>
+          </el-table-column>
           <el-table-column prop="username" label="账号" />
           <el-table-column prop="real_name" label="姓名" />
           <el-table-column label="角色">
@@ -29,8 +32,8 @@
             :page-sizes="[10, 20, 50, 100]"
             :total="userTotal"
             layout="total, sizes, prev, pager, next, jumper"
-            @size-change="loadUsers"
-            @current-change="loadUsers"
+            @size-change="() => loadUsers()"
+            @current-change="(val: number) => loadUsers(val)"
           />
         </div>
       </el-tab-pane>
@@ -94,7 +97,8 @@ function openCreate() {
   dialogVisible.value = true
 }
 
-async function loadUsers() {
+async function loadUsers(page?: number) {
+  if (page) userQuery.value.page = page
   const userData = await listSystemUsers(userQuery.value)
   users.value = userData.items || []
   userTotal.value = userData.total || 0

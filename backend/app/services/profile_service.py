@@ -26,7 +26,7 @@ class ProfileService:
             rows = (
                 db.query(RiskRule.rule_name, RiskRule.rule_code, RuleHit.rule_id)
                 .join(RuleHit, RuleHit.rule_id == RiskRule.id)
-                .filter(RuleHit.assessment_id.in_(assessment_ids), RiskRule.rule_status == "enabled")
+                .filter(RuleHit.assessment_id.in_(assessment_ids), RiskRule.rule_status == 1)
                 .all()
             )
             counter = {}

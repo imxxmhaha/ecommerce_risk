@@ -15,7 +15,7 @@ class EffectiveRiskService:
             .join(RiskRule, RuleHit.rule_id == RiskRule.id)
             .filter(
                 RuleHit.assessment_id == assessment_id,
-                RiskRule.rule_status == "enabled",
+                RiskRule.rule_status == 1,
             )
             .order_by(RiskRule.priority.desc(), RiskRule.id.asc())
             .all()

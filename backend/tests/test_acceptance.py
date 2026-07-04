@@ -442,7 +442,7 @@ class TestRuleManagement:
                 ]
             },
             "score": 50,
-            "rule_status": "enabled"
+            "rule_status": 1
         }
         response = client.post("/api/risk/rules", json=rule_data, headers=auth_headers)
         assert response.status_code == 200
@@ -450,7 +450,7 @@ class TestRuleManagement:
         assert data["code"] == 0
         assert data["data"]["rule_code"] == rule_data["rule_code"]
         assert data["data"]["rule_name"] == rule_data["rule_name"]
-        assert data["data"]["rule_status"] == "enabled"
+        assert int(data["data"]["rule_status"]) == 1
 
     def test_tc_5_2_update_rule(self, client: TestClient, auth_headers: dict):
         """TC-5.2 编辑规则"""
@@ -463,7 +463,7 @@ class TestRuleManagement:
                 "conditions": [{"feature": "order_amount", "operator": ">", "value": 1000}]
             },
             "score": 30,
-            "rule_status": "enabled"
+            "rule_status": 1
         }
         create_resp = client.post("/api/risk/rules", json=create_data, headers=auth_headers)
         assert create_resp.json()["code"] == 0, f"创建规则失败: {create_resp.json()}"
@@ -493,17 +493,17 @@ class TestRuleManagement:
                 "conditions": [{"feature": "order_amount", "operator": ">", "value": 1000}]
             },
             "score": 30,
-            "rule_status": "enabled"
+            "rule_status": 1
         }
         create_resp = client.post("/api/risk/rules", json=create_data, headers=auth_headers)
         assert create_resp.json()["code"] == 0, f"创建规则失败: {create_resp.json()}"
         rule_id = create_resp.json()["data"]["id"]
 
         # 停用规则
-        status_data = {"id": rule_id, "rule_status": "disabled"}
+        status_data = {"id": rule_id, "rule_status": 0}
         status_resp = client.post("/api/risk/rules/status", json=status_data, headers=auth_headers)
         assert status_resp.status_code == 200
-        assert status_resp.json()["data"]["rule_status"] == "disabled"
+        assert int(status_resp.json()["data"]["rule_status"]) == 0
 
     def test_tc_5_4_disabled_rule_not_hit(self, client: TestClient, auth_headers: dict):
         """TC-5.4 停用规则后不命中"""
@@ -519,13 +519,13 @@ class TestRuleManagement:
                 ]
             },
             "score": 80,
-            "rule_status": "enabled"
+            "rule_status": 1
         }
         create_resp = client.post("/api/risk/rules", json=create_data, headers=auth_headers)
         rule_id = create_resp.json()["data"]["id"]
 
         # 停用规则
-        client.post("/api/risk/rules/status", json={"id": rule_id, "rule_status": "disabled"}, headers=auth_headers)
+        client.post("/api/risk/rules/status", json={"id": rule_id, "rule_status": 0}, headers=auth_headers)
 
         # 发起风险检查
         check_payload = {
@@ -553,17 +553,17 @@ class TestRuleManagement:
                 "conditions": [{"feature": "order_amount", "operator": ">", "value": 1000}]
             },
             "score": 30,
-            "rule_status": "disabled"
+            "rule_status": 0
         }
         create_resp = client.post("/api/risk/rules", json=create_data, headers=auth_headers)
         assert create_resp.json()["code"] == 0, f"创建规则失败: {create_resp.json()}"
         rule_id = create_resp.json()["data"]["id"]
 
         # 启用规则
-        status_data = {"id": rule_id, "rule_status": "enabled"}
+        status_data = {"id": rule_id, "rule_status": 1}
         status_resp = client.post("/api/risk/rules/status", json=status_data, headers=auth_headers)
         assert status_resp.status_code == 200
-        assert status_resp.json()["data"]["rule_status"] == "enabled"
+        assert int(status_resp.json()["data"]["rule_status"]) == 1
 
     def test_tc_5_6_hit_count_statistics(self, client: TestClient, auth_headers: dict):
         """TC-5.6 命中统计变化验证"""

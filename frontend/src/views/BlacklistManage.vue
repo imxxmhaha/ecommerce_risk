@@ -5,18 +5,36 @@
       <el-select v-model="query.blacklist_type" placeholder="类型" clearable style="width: 160px">
         <el-option v-for="x in types" :key="x" :label="x" :value="x" />
       </el-select>
-      <el-select v-model="query.status" placeholder="状态" clearable style="width: 140px"><el-option label="active" value="active" /><el-option label="deleted" value="deleted" /></el-select>
+      <el-select v-model="query.status" placeholder="状态" clearable style="width: 140px">
+        <el-option label="启用" :value="1" />
+        <el-option label="禁用" :value="0" />
+      </el-select>
       <el-input v-model="query.keyword" placeholder="命中值" style="width: 220px" />
-      <el-button type="primary" @click="load">查询</el-button>
+      <el-button type="primary" @click="load()">查询</el-button>
+      <el-button @click="reset">重置</el-button>
     </div>
     <div class="panel">
       <el-table :data="rows" border v-loading="loading">
-        <el-table-column prop="id" label="ID" width="80" />
+        <el-table-column label="序号" width="60" align="center">
+          <template #default="{ $index }">{{ (query.page - 1) * query.page_size + $index + 1 }}</template>
+        </el-table-column>
         <el-table-column prop="blacklist_type" label="类型" width="140" />
         <el-table-column prop="blacklist_value" label="命中值" min-width="180" />
-        <el-table-column prop="status" label="状态" width="120" />
+        <el-table-column label="状态" width="80">
+          <template #default="{ row }">
+            <el-tag :type="row.status === 1 ? 'success' : 'info'" size="small">
+              {{ row.status === 1 ? '启用' : '禁用' }}
+            </el-tag>
+          </template>
+        </el-table-column>
         <el-table-column prop="remark" label="备注" />
-        <el-table-column label="操作" width="100"><template #default="{ row }"><el-button link type="danger" @click="remove(row)">删除</el-button></template></el-table-column>
+        <el-table-column label="操作" width="200">
+          <template #default="{ row }">
+            <el-button v-if="row.status === 1" link type="warning" @click="toggle(row)">禁用</el-button>
+            <el-button v-else link type="success" @click="toggle(row)">启用</el-button>
+            <el-button link type="danger" @click="remove(row)">删除</el-button>
+          </template>
+        </el-table-column>
       </el-table>
       <div class="pagination-wrapper">
         <el-pagination
@@ -25,8 +43,8 @@
           :page-sizes="[10, 20, 50, 100]"
           :total="total"
           layout="total, sizes, prev, pager, next, jumper"
-          @size-change="load"
-          @current-change="load"
+          @size-change="() => load()"
+          @current-change="(val: number) => load(val)"
         />
       </div>
     </div>
@@ -44,18 +62,28 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { createBlacklist, deleteBlacklist, listBlacklists } from '../api/blacklists'
+import { createBlacklist, deleteBlacklist, listBlacklists, setBlacklistStatus } from '../api/blacklists'
 
 const types = ['user_id', 'phone', 'address', 'device_id', 'ip', 'order_id']
-const query = ref({ blacklist_type: '', status: 'active', keyword: '', page: 1, page_size: 20 })
+const query = ref({ blacklist_type: '', status: '' as string | number, keyword: '', page: 1, page_size: 20 })
 const rows = ref<any[]>([])
 const total = ref(0)
 const loading = ref(false)
 const dialogVisible = ref(false)
 const form = ref({ blacklist_type: 'user_id', blacklist_value: '', remark: '' })
-async function load() { loading.value = true; try { const res: any = await listBlacklists(query.value); rows.value = res.items || []; total.value = res.total || 0 } finally { loading.value = false } }
+async function load(page?: number) {
+  if (page) query.value.page = page
+  loading.value = true
+  try {
+    const res: any = await listBlacklists(query.value)
+    rows.value = res.items || []
+    total.value = res.total || 0
+  } finally { loading.value = false }
+}
+function reset() { query.value.blacklist_type = ''; query.value.status = ''; query.value.keyword = ''; load() }
 function openCreate() { form.value = { blacklist_type: 'user_id', blacklist_value: '', remark: '' }; dialogVisible.value = true }
 async function save() { await createBlacklist(form.value); ElMessage.success('保存成功'); dialogVisible.value = false; load() }
+async function toggle(row: any) { await setBlacklistStatus({ id: row.id, status: row.status === 1 ? 0 : 1 }); load() }
 async function remove(row: any) { await ElMessageBox.confirm('确认删除该黑名单？'); await deleteBlacklist({ id: row.id }); load() }
 onMounted(load)
 </script>

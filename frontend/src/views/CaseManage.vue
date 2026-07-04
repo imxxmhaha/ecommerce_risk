@@ -7,10 +7,13 @@
       </el-select>
       <el-input v-model="query.user_id" placeholder="用户编号" style="width: 180px" />
       <el-input v-model="query.order_id" placeholder="订单编号" style="width: 180px" />
-      <el-button type="primary" @click="load">查询</el-button>
+      <el-button type="primary" @click="load()">查询</el-button>
     </div>
     <div class="panel">
       <el-table :data="rows" border v-loading="loading">
+        <el-table-column label="序号" width="60" align="center">
+          <template #default="{ $index }">{{ (query.page - 1) * query.page_size + $index + 1 }}</template>
+        </el-table-column>
         <el-table-column prop="id" label="案件编号" width="100" />
         <el-table-column label="状态" width="110"><template #default="{ row }"><CaseStatusTag :status="row.case_status" /></template></el-table-column>
         <el-table-column prop="user_id" label="用户" />
@@ -26,8 +29,8 @@
           :page-sizes="[10, 20, 50, 100]"
           :total="total"
           layout="total, sizes, prev, pager, next, jumper"
-          @size-change="load"
-          @current-change="load"
+          @size-change="() => load()"
+          @current-change="(val: number) => load(val)"
         />
       </div>
     </div>
@@ -43,7 +46,15 @@ const loading = ref(false)
 const rows = ref<any[]>([])
 const total = ref(0)
 const query = ref({ case_status: '', user_id: '', order_id: '', page: 1, page_size: 20 })
-async function load() { loading.value = true; try { const res: any = await listCases(query.value); rows.value = res.items || []; total.value = res.total || 0 } finally { loading.value = false } }
+async function load(page?: number) {
+  if (page) query.value.page = page
+  loading.value = true
+  try {
+    const res: any = await listCases(query.value)
+    rows.value = res.items || []
+    total.value = res.total || 0
+  } finally { loading.value = false }
+}
 onMounted(load)
 </script>
 

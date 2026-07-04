@@ -8,6 +8,10 @@ export function createBlacklist(data: any) {
   return request.post('/api/risk/blacklists', data)
 }
 
+export function setBlacklistStatus(data: any) {
+  return request.post('/api/risk/blacklists/status', data)
+}
+
 export function deleteBlacklist(data: any) {
   return request.post('/api/risk/blacklists/delete', data)
 }

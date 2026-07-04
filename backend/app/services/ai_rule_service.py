@@ -90,7 +90,7 @@ class AiRuleService:
 {{
   "rule_code": "规则编码(大写英文)",
   "rule_name": "规则名称",
-  "rule_status": "disabled",
+  "rule_status": 0,
   "score": 分值(0-100),
   "priority": 优先级(数值越大越优先),
   "condition_json": 规则条件JSON,
@@ -200,7 +200,7 @@ class AiRuleService:
                 "summary": "规则条件不合法，无法进行重叠检测",
             }
 
-        rules = db.query(RiskRule).filter(RiskRule.rule_status == "enabled").all()
+        rules = db.query(RiskRule).filter(RiskRule.rule_status == 1).all()
         new_constraints = self._extract_constraints(condition_json)
         overlaps = []
         for rule in rules:
@@ -311,7 +311,7 @@ class AiRuleService:
         return {
             "rule_code": "AI_NEW_USER_HIGH_AMOUNT",
             "rule_name": "AI生成-新用户高额订单",
-            "rule_status": "disabled",
+            "rule_status": 0,
             "score": float(req.expected_score or 20),
             "priority": 20,
             "condition_json": condition,

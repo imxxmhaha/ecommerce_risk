@@ -98,37 +98,37 @@ INSERT INTO `risk_rules`
 (`rule_code`, `rule_name`, `rule_status`, `priority`, `score`, `condition_json`, `description`)
 VALUES
 -- 支付类（低风险，priority 20-29）
-('PAYMENT_METHOD_RISK', '支付方式风险较高', 'enabled', 29, 25.00, '{"operator":"in","feature":"payment_method","value":["virtual_card","unknown"]}', '支付方式属于高风险或未知类型'),
+('PAYMENT_METHOD_RISK', '支付方式风险较高', 1, 29, 25.00, '{"operator":"in","feature":"payment_method","value":["virtual_card","unknown"]}', '支付方式属于高风险或未知类型'),
 -- 用户行为-低风险（priority 30-39）
-('LOGISTICS_COMPLAINT_REPEAT', '物流投诉重复发生', 'enabled', 36, 30.00, '{"operator":">","feature":"logistics_complaint_count_30d","value":2}', '用户近30天物流投诉次数过多'),
-('USER_CANCEL_7D_HIGH', '用户近期取消订单过多', 'enabled', 38, 35.00, '{"operator":">","feature":"user_cancel_count_7d","value":3}', '用户近7天取消订单次数过多'),
-('AFTER_SALE_7D_HIGH', '用户近期售后申请过多', 'enabled', 37, 35.00, '{"operator":">","feature":"user_after_sale_count_7d","value":2}', '用户近7天售后申请次数过多'),
-('USER_COMPLAINT_HIGH', '用户投诉次数过多', 'enabled', 39, 40.00, '{"operator":">","feature":"user_complaint_count_90d","value":3}', '用户近90天投诉次数过多'),
+('LOGISTICS_COMPLAINT_REPEAT', '物流投诉重复发生', 1, 36, 30.00, '{"operator":">","feature":"logistics_complaint_count_30d","value":2}', '用户近30天物流投诉次数过多'),
+('USER_CANCEL_7D_HIGH', '用户近期取消订单过多', 1, 38, 35.00, '{"operator":">","feature":"user_cancel_count_7d","value":3}', '用户近7天取消订单次数过多'),
+('AFTER_SALE_7D_HIGH', '用户近期售后申请过多', 1, 37, 35.00, '{"operator":">","feature":"user_after_sale_count_7d","value":2}', '用户近7天售后申请次数过多'),
+('USER_COMPLAINT_HIGH', '用户投诉次数过多', 1, 39, 40.00, '{"operator":">","feature":"user_complaint_count_90d","value":3}', '用户近90天投诉次数过多'),
 -- 订单类（中低风险，priority 40-49）
-('ORDER_ITEMS_HIGH', '订单商品数量异常', 'enabled', 46, 35.00, '{"operator":">","feature":"order_item_count","value":20}', '单笔订单商品数量异常偏高'),
-('FIRST_ORDER_HIGH_AMOUNT', '首单金额异常偏高', 'enabled', 47, 45.00, '{"operator":"and","conditions":[{"feature":"is_first_order","operator":"=","value":true},{"feature":"order_amount","operator":">","value":2000}]}', '用户首单金额异常偏高'),
-('COUPON_ABUSE', '优惠券使用异常', 'enabled', 48, 50.00, '{"operator":"and","conditions":[{"feature":"is_coupon_used","operator":"=","value":true},{"feature":"coupon_discount_rate","operator":">","value":0.5}]}', '订单使用高折扣优惠券，存在薅羊毛风险'),
-('ORDER_AMOUNT_HIGH', '订单金额过高', 'enabled', 49, 55.00, '{"operator":">","feature":"order_amount","value":5000}', '订单金额超过高额阈值'),
+('ORDER_ITEMS_HIGH', '订单商品数量异常', 1, 46, 35.00, '{"operator":">","feature":"order_item_count","value":20}', '单笔订单商品数量异常偏高'),
+('FIRST_ORDER_HIGH_AMOUNT', '首单金额异常偏高', 1, 47, 45.00, '{"operator":"and","conditions":[{"feature":"is_first_order","operator":"=","value":true},{"feature":"order_amount","operator":">","value":2000}]}', '用户首单金额异常偏高'),
+('COUPON_ABUSE', '优惠券使用异常', 1, 48, 50.00, '{"operator":"and","conditions":[{"feature":"is_coupon_used","operator":"=","value":true},{"feature":"coupon_discount_rate","operator":">","value":0.5}]}', '订单使用高折扣优惠券，存在薅羊毛风险'),
+('ORDER_AMOUNT_HIGH', '订单金额过高', 1, 49, 55.00, '{"operator":">","feature":"order_amount","value":5000}', '订单金额超过高额阈值'),
 -- 地址类（中风险，priority 50-59）
-('ADDRESS_IP_MISMATCH', '地址与IP所在地不一致', 'enabled', 56, 45.00, '{"operator":"=","feature":"is_address_ip_mismatch","value":true}', '收货地址与请求IP所在地不一致'),
-('ADDRESS_ORDER_1D_HIGH', '地址近期订单过多', 'enabled', 57, 50.00, '{"operator":">","feature":"address_order_count_1d","value":10}', '同一地址1天内订单数量过多'),
-('ADDRESS_USER_COUNT_HIGH', '地址关联用户过多', 'enabled', 58, 55.00, '{"operator":">","feature":"address_related_user_count","value":4}', '同一收货地址关联多个用户'),
-('ADDRESS_HIGH_RISK_AREA', '收货地址命中高风险地区', 'enabled', 59, 60.00, '{"operator":"=","feature":"is_address_high_risk_area","value":true}', '收货地址属于高风险地区'),
+('ADDRESS_IP_MISMATCH', '地址与IP所在地不一致', 1, 56, 45.00, '{"operator":"=","feature":"is_address_ip_mismatch","value":true}', '收货地址与请求IP所在地不一致'),
+('ADDRESS_ORDER_1D_HIGH', '地址近期订单过多', 1, 57, 50.00, '{"operator":">","feature":"address_order_count_1d","value":10}', '同一地址1天内订单数量过多'),
+('ADDRESS_USER_COUNT_HIGH', '地址关联用户过多', 1, 58, 55.00, '{"operator":">","feature":"address_related_user_count","value":4}', '同一收货地址关联多个用户'),
+('ADDRESS_HIGH_RISK_AREA', '收货地址命中高风险地区', 1, 59, 60.00, '{"operator":"=","feature":"is_address_high_risk_area","value":true}', '收货地址属于高风险地区'),
 -- 设备/IP/手机类（中高风险，priority 60-69）
-('IP_ORDER_1H_HIGH', 'IP短时间下单频繁', 'enabled', 65, 50.00, '{"operator":">","feature":"ip_order_count_1h","value":10}', '同一IP 1小时内下单次数过多'),
-('DEVICE_ORDER_1H_HIGH', '设备短时间下单频繁', 'enabled', 66, 55.00, '{"operator":">","feature":"device_order_count_1h","value":8}', '同一设备1小时内下单次数过多'),
-('IP_HIGH_RISK', 'IP命中高风险地区', 'enabled', 67, 55.00, '{"operator":"=","feature":"is_ip_high_risk_area","value":true}', '请求IP归属高风险地区'),
-('PHONE_MULTI_USER', '手机号关联用户过多', 'enabled', 68, 60.00, '{"operator":">","feature":"phone_related_user_count","value":3}', '同一手机号关联多个用户，存在账号团伙风险'),
-('DEVICE_MULTI_USER', '设备关联用户过多', 'enabled', 69, 65.00, '{"operator":">","feature":"device_related_user_count","value":5}', '同一设备关联多个用户，存在批量注册或刷单风险'),
+('IP_ORDER_1H_HIGH', 'IP短时间下单频繁', 1, 65, 50.00, '{"operator":">","feature":"ip_order_count_1h","value":10}', '同一IP 1小时内下单次数过多'),
+('DEVICE_ORDER_1H_HIGH', '设备短时间下单频繁', 1, 66, 55.00, '{"operator":">","feature":"device_order_count_1h","value":8}', '同一设备1小时内下单次数过多'),
+('IP_HIGH_RISK', 'IP命中高风险地区', 1, 67, 55.00, '{"operator":"=","feature":"is_ip_high_risk_area","value":true}', '请求IP归属高风险地区'),
+('PHONE_MULTI_USER', '手机号关联用户过多', 1, 68, 60.00, '{"operator":">","feature":"phone_related_user_count","value":3}', '同一手机号关联多个用户，存在账号团伙风险'),
+('DEVICE_MULTI_USER', '设备关联用户过多', 1, 69, 65.00, '{"operator":">","feature":"device_related_user_count","value":5}', '同一设备关联多个用户，存在批量注册或刷单风险'),
 -- 用户行为类（高风险，priority 70-79）
-('USER_ORDER_1H_HIGH', '用户短时间下单频繁', 'enabled', 75, 65.00, '{"operator":">","feature":"user_order_count_1h","value":5}', '同一用户1小时内下单次数过多'),
-('USER_REGISTER_NEW_HIGH_AMOUNT', '新用户高额订单', 'enabled', 76, 70.00, '{"operator":"and","conditions":[{"feature":"user_register_days","operator":"<","value":7},{"feature":"order_amount","operator":">","value":3000}]}', '注册7天内的新用户发起高额订单'),
-('USER_REFUND_RATE_HIGH', '用户退款率过高', 'enabled', 77, 75.00, '{"operator":">","feature":"user_refund_rate_90d","value":0.3}', '用户近90天退款率超过30%'),
-('USER_REJECT_HISTORY', '用户历史拒绝次数过多', 'enabled', 78, 80.00, '{"operator":">","feature":"user_reject_count_180d","value":1}', '用户历史存在多次拒绝处置'),
-('USER_HIGH_RISK_HISTORY', '用户历史高风险次数过多', 'enabled', 79, 85.00, '{"operator":">","feature":"user_high_risk_count_180d","value":2}', '用户历史多次被判定为高风险'),
+('USER_ORDER_1H_HIGH', '用户短时间下单频繁', 1, 75, 65.00, '{"operator":">","feature":"user_order_count_1h","value":5}', '同一用户1小时内下单次数过多'),
+('USER_REGISTER_NEW_HIGH_AMOUNT', '新用户高额订单', 1, 76, 70.00, '{"operator":"and","conditions":[{"feature":"user_register_days","operator":"<","value":7},{"feature":"order_amount","operator":">","value":3000}]}', '注册7天内的新用户发起高额订单'),
+('USER_REFUND_RATE_HIGH', '用户退款率过高', 1, 77, 75.00, '{"operator":">","feature":"user_refund_rate_90d","value":0.3}', '用户近90天退款率超过30%'),
+('USER_REJECT_HISTORY', '用户历史拒绝次数过多', 1, 78, 80.00, '{"operator":">","feature":"user_reject_count_180d","value":1}', '用户历史存在多次拒绝处置'),
+('USER_HIGH_RISK_HISTORY', '用户历史高风险次数过多', 1, 79, 85.00, '{"operator":">","feature":"user_high_risk_count_180d","value":2}', '用户历史多次被判定为高风险'),
 -- 黑名单类（最严重，priority 90-99，score 95-100）
-('ORDER_BLACKLIST', '订单命中黑名单', 'enabled', 98, 95.00, '{"operator":"=","feature":"is_order_blacklisted","value":true}', '订单编号命中有效黑名单，建议直接拒绝'),
-('USER_BLACKLIST', '用户命中黑名单', 'enabled', 99, 100.00, '{"operator":"=","feature":"is_user_blacklisted","value":true}', '用户编号命中有效黑名单，建议直接拒绝或人工复核');
+('ORDER_BLACKLIST', '订单命中黑名单', 1, 98, 95.00, '{"operator":"=","feature":"is_order_blacklisted","value":true}', '订单编号命中有效黑名单，建议直接拒绝'),
+('USER_BLACKLIST', '用户命中黑名单', 1, 99, 100.00, '{"operator":"=","feature":"is_user_blacklisted","value":true}', '用户编号命中有效黑名单，建议直接拒绝或人工复核');
 
 
 
@@ -136,14 +136,14 @@ VALUES
 -- 黑名单数据
 -- ============================================================
 INSERT INTO `blacklists`
-(`id`, `blacklist_type`, `blacklist_value`, `remark`, `status`, `created_by`, `created_at`, `updated_at`)
+(`id`, `blacklist_type`, `blacklist_value`, `remark`, `status`, `deleted`, `created_by`, `created_at`, `updated_at`)
 VALUES
-(6001, 'user_id', 'U90001', '历史多次拒付和异常售后，加入用户黑名单', 'active', 'admin', '2026-07-01 09:00:00', '2026-07-01 09:00:00'),
-(6002, 'order_id', 'O90001', '已确认异常订单，禁止继续交易', 'active', 'admin', '2026-07-01 09:05:00', '2026-07-01 09:05:00'),
-(6003, 'phone', '13900000001', '手机号关联多个异常账号', 'active', 'admin', '2026-07-01 09:10:00', '2026-07-01 09:10:00'),
-(6004, 'device_id', 'D-RISK-001', '设备关联批量注册账号', 'active', 'admin', '2026-07-01 09:15:00', '2026-07-01 09:15:00'),
-(6005, 'ip', '10.10.10.10', '高风险代理 IP', 'active', 'admin', '2026-07-01 09:20:00', '2026-07-01 09:20:00'),
-(6006, 'address', '高风险地区A-共享仓', '同一地址关联多个风险用户', 'active', 'admin', '2026-07-01 09:25:00', '2026-07-01 09:25:00');
+(6001, 'user_id', 'U90001', '历史多次拒付和异常售后，加入用户黑名单', 1, 0, 'admin', '2026-07-01 09:00:00', '2026-07-01 09:00:00'),
+(6002, 'order_id', 'O90001', '已确认异常订单，禁止继续交易', 1, 0, 'admin', '2026-07-01 09:05:00', '2026-07-01 09:05:00'),
+(6003, 'phone', '13900000001', '手机号关联多个异常账号', 1, 0, 'admin', '2026-07-01 09:10:00', '2026-07-01 09:10:00'),
+(6004, 'device_id', 'D-RISK-001', '设备关联批量注册账号', 1, 0, 'admin', '2026-07-01 09:15:00', '2026-07-01 09:15:00'),
+(6005, 'ip', '10.10.10.10', '高风险代理 IP', 1, 0, 'admin', '2026-07-01 09:20:00', '2026-07-01 09:20:00'),
+(6006, 'address', '高风险地区A-共享仓', '同一地址关联多个风险用户', 1, 0, 'admin', '2026-07-01 09:25:00', '2026-07-01 09:25:00');
 
 -- ============================================================
 -- 风险事件数据
