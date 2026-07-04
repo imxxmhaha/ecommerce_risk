@@ -639,7 +639,7 @@ class TestBlacklistManagement:
         assert data["code"] == 0
         assert data["data"]["blacklist_type"] == "user_id"
         assert data["data"]["blacklist_value"] == bl_data["blacklist_value"]
-        assert data["data"]["status"] == "active"
+        assert data["data"]["status"] == 1
 
     def test_tc_6_2_blacklist_user_reject(self, client: TestClient, auth_headers: dict):
         """TC-6.2 黑名单用户风险检查 - 直接拒绝"""

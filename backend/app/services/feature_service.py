@@ -71,7 +71,8 @@ class FeatureService:
         return db.query(Blacklist).filter(
             Blacklist.blacklist_type == blacklist_type,
             Blacklist.blacklist_value == str(blacklist_value),
-            Blacklist.status == "active",
+            Blacklist.status == 1,
+            Blacklist.deleted == 0,
         ).first() is not None
 
     def _event_count(self, db: Session, user_id: str, since, event_type: str = None) -> int:

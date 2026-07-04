@@ -20,7 +20,14 @@
       <div class="metric"><div class="metric-label">风险事件总数</div><div class="metric-value">{{ data?.event_total || 0 }}</div></div>
       <div class="metric"><div class="metric-label">高风险占比</div><div class="metric-value">{{ Math.round((data?.high_risk_rate || 0) * 100) }}%</div></div>
       <div class="metric"><div class="metric-label">案件数</div><div class="metric-value">{{ data?.case_total || 0 }}</div></div>
+      <div class="metric"><div class="metric-label">已处理案件</div><div class="metric-value">{{ data?.resolved_case_total || 0 }}</div></div>
+      <div class="metric"><div class="metric-label">平均处理时长</div><div class="metric-value">{{ data?.avg_case_process_hours || 0 }}h</div></div>
       <div class="metric"><div class="metric-label">黑名单命中</div><div class="metric-value">{{ data?.blacklist_hit_count || 0 }}</div></div>
+    </div>
+
+    <div class="panel">
+      <h3>风险事件趋势</h3>
+      <div ref="trendRef" style="height: 300px" />
     </div>
 
     <div class="two-col">
@@ -75,6 +82,7 @@ const aiAnalysis = ref<any>(null)
 const aiLoading = ref(false)
 const pieRef = ref<HTMLElement>()
 const barRef = ref<HTMLElement>()
+const trendRef = ref<HTMLElement>()
 
 async function load() {
   data.value = await getDashboard({ start_date: range.value?.[0], end_date: range.value?.[1] })
@@ -98,12 +106,28 @@ async function loadAiAnalysis() {
 }
 
 function renderCharts() {
+  // 渲染趋势图
+  if (trendRef.value) {
+    const trendData = data.value?.risk_event_trend || []
+    echarts.init(trendRef.value).setOption({
+      tooltip: { trigger: 'axis' },
+      legend: { data: ['总事件', '高风险'] },
+      xAxis: { type: 'category', data: trendData.map((x: any) => x.date) },
+      yAxis: { type: 'value' },
+      series: [
+        { name: '总事件', type: 'line', data: trendData.map((x: any) => x.total), smooth: true },
+        { name: '高风险', type: 'line', data: trendData.map((x: any) => x.high_risk), smooth: true, itemStyle: { color: '#E6A23C' } }
+      ]
+    })
+  }
+  // 渲染饼图
   if (pieRef.value) {
     echarts.init(pieRef.value).setOption({
       tooltip: {},
       series: [{ type: 'pie', radius: '65%', data: data.value?.risk_level_distribution || [] }]
     })
   }
+  // 渲染柱状图
   if (barRef.value) {
     const rows = data.value?.rule_hit_ranking || []
     echarts.init(barRef.value).setOption({

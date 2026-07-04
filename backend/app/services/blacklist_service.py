@@ -35,7 +35,7 @@ class BlacklistService:
         existing = db.query(Blacklist).filter(Blacklist.blacklist_type == req.blacklist_type, Blacklist.blacklist_value == req.blacklist_value, Blacklist.deleted == 0).first()
         if existing:
             raise BizError(CONFLICT, "blacklist already exists")
-        item = Blacklist(**req.model_dump(), status=0, deleted=0)
+        item = Blacklist(**req.model_dump(), status=1, deleted=0)
         db.add(item)
         db.commit()
         db.refresh(item)

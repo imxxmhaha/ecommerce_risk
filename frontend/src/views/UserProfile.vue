@@ -7,15 +7,20 @@
     </div>
     <div v-if="profile" class="metric-grid">
       <div class="metric"><div class="metric-label">事件总数</div><div class="metric-value">{{ profile.summary.event_count }}</div></div>
+      <div class="metric"><div class="metric-label">订单数</div><div class="metric-value">{{ profile.summary.order_count }}</div></div>
       <div class="metric"><div class="metric-label">高风险次数</div><div class="metric-value">{{ profile.summary.high_risk_count }}</div></div>
       <div class="metric"><div class="metric-label">案件数</div><div class="metric-value">{{ profile.summary.case_count }}</div></div>
-      <div class="metric"><div class="metric-label">拒绝次数</div><div class="metric-value">{{ profile.summary.reject_count }}</div></div>
+      <div class="metric"><div class="metric-label">退款次数</div><div class="metric-value">{{ profile.summary.refund_count }}</div></div>
+      <div class="metric"><div class="metric-label">投诉次数</div><div class="metric-value">{{ profile.summary.complaint_count }}</div></div>
+      <div class="metric"><div class="metric-label">售后次数</div><div class="metric-value">{{ profile.summary.after_sale_count }}</div></div>
+      <div class="metric"><div class="metric-label">地址数量</div><div class="metric-value">{{ profile.summary.address_count }}</div></div>
     </div>
     <div v-if="profile" class="two-col">
       <div class="panel"><h3>最近事件</h3><el-table :data="profile.recent_events" border size="small"><el-table-column prop="event_type" label="事件" /><el-table-column prop="order_id" label="订单" /><el-table-column prop="created_at" label="时间" /></el-table></div>
       <div class="panel"><h3>常命中规则</h3><el-table :data="profile.top_hit_rules" border size="small"><el-table-column prop="rule_name" label="规则" /><el-table-column prop="rule_code" label="编码" /><el-table-column prop="hit_count" label="次数" /></el-table></div>
     </div>
     <div v-if="profile" class="panel"><h3>关联案件</h3><el-table :data="profile.related_cases" border><el-table-column prop="id" label="案件" /><el-table-column prop="order_id" label="订单" /><el-table-column label="状态"><template #default="{ row }"><CaseStatusTag :status="row.case_status" /></template></el-table-column><el-table-column prop="created_at" label="时间" /></el-table></div>
+    <div v-if="profile?.addresses?.length" class="panel"><h3>关联地址</h3><el-tag v-for="addr in profile.addresses" :key="addr" style="margin: 0 8px 8px 0">{{ addr }}</el-tag></div>
   </div>
 </template>
 
